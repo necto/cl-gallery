@@ -26,7 +26,7 @@
   (upload:*baseurl* '("upload"))
   (upload:*store* *store*)
   (upload:*multiple* t)
-  (upload:*mime-type* "image")
+  (upload:*mime-type* nil)
   (upload:*file-stored-callback*
    (lambda (files)
      (when *current-files*
@@ -52,10 +52,12 @@
                                             'upl 'upload:upload-file)
                                            (restas:genurl-submodule
                                             'upl 'upload:upload-empty-url))))
-                       (:div :id "preview")
                        (:form :method "get" :action (restas:genurl 'receive-pic)
+                              "Title:" (:input :type "text" :name "title" :value "")
+                              "Comment:" (:input :type "comment" :name "comment" :value "")
                               (:input :type "hidden" :name "pic" :value "no-value" :id "pic")
-                              (:input :type "submit" :value "like it!")))))))
+                              (:input :type "submit" :value "like it!"))
+                       (:div :id "preview"))))))
 
 (defun gen-small-pic-fname (fname)
   (format nil "~a.thumb.~a" (subseq fname 0 (- (length fname) 4))
@@ -73,11 +75,15 @@
 (restas:define-route receive-pic ("likeit")
   (setf *current-files* nil)
   (with-input-from-string (files-param (hunchentoot:get-parameter "pic"))
-    (let ((files (read files-param)))
+    (let ((files (read files-param))
+          (title (hunchentoot:get-parameter "title"))
+          (comment (hunchentoot:get-parameter "comment")))
       (setf *pictures*
             (nconc (mapcar #'(lambda (file)
                                (list (file-url *store* file)
-                                     (make-thumb file)))
+                                     (make-thumb file)
+                                     title
+                                     comment))
                            files)
                    *pictures*))
       (restas:redirect 'main))))
@@ -105,7 +111,9 @@
                   (:center (:a :href (restas:genurl 'add-pic)
                                "add a picture"))
                   (:br)
-                  (loop for (pic thumb) in *pictures* do
+                  (loop for (pic thumb title comment) in *pictures* do
                        (htm (:div :class "img" 
-                                  (:a :href pic :rel "group" :class "fancybox-thumb"
-                                      (:img :src thumb)))))))))
+                                  (:a :href pic :rel "group" :class "fancybox-thumb" :title title
+                                      (:img :src thumb))
+                                  (:div :class "desc" (:b (str title))
+                                        (:br) (str comment)))))))))

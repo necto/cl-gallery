@@ -2,12 +2,10 @@ div.img
   {
   margin:2px;
   border:1px solid #0000ff;
-  height:auto;
-  width:auto;
   float:left;
   text-align:center;
   width:120px;
-  height:120px;
+  height:auto;
   }
 div.img img
   {
