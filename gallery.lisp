@@ -12,7 +12,11 @@
   (restas.directory-publisher:*baseurl* '("files"))
   (restas.directory-publisher:*autoindex* t))
 
-(defparameter *current-file* nil)
+(restas:mount-submodule scripts (#:restas.directory-publisher)
+  (restas.directory-publisher:*directory* #p"./scripts/")
+  (restas.directory-publisher:*baseurl* '("script")))
+
+(defparameter *current-files* nil)
 
 (defparameter *pictures* nil)
 
@@ -21,27 +25,33 @@
 (restas:mount-submodule upl (#:upload)
   (upload:*baseurl* '("upload"))
   (upload:*store* *store*)
-  (upload:*multiple* nil)
+  (upload:*multiple* t)
   (upload:*file-stored-callback*
-   (lambda (file)
-     (when *current-file*
-         (delete-file (file-path *store* *current-file*)))
-     (setf *current-file* file)
-     (format nil "parent.done(\"~a\", \"~a\");" (file-url *store* file) file))))
+   (lambda (files)
+     (when *current-files*
+       (mapcar #'(lambda (file)
+                   (delete-file (file-path *store* file)))
+               *current-files*))
+     (setf *current-files* files)
+     (let ((*print-pretty* nil))
+       (format nil "parent.done([~{\"~a\"~^, ~}], ~
+                                \'(~{\"~a\"~^ ~})\');"
+               (mapcar #'(lambda (file)
+                           (file-url *store* file))
+                       files)
+               files)))))
 
 (restas:define-route add-pic ("add")
   (with-html-output-to-string (sss)
     (htm "<!DOCTYPE html>"
          (:html (:head (:script :language "javascript" :type "text/javascript"
-                                "function done(preview, file) {
-                                                      document.getElementById(\"preview\").src = preview;
-                                                      document.getElementById(\"pic\").value = file;}"))
+                                :src "script/preview-updater.js"))
                 (:body (str (restas:with-context (second (gethash 'upl *submodules*))
                               (upload:form (restas:genurl-submodule
                                             'upl 'upload:upload-file)
                                            (restas:genurl-submodule
                                             'upl 'upload:upload-empty-url))))
-                       (:img :id "preview")
+                       (:div :id "preview")
                        (:form :method "get" :action (restas:genurl 'receive-pic)
                               (:input :type "hidden" :name "pic" :value "no-value" :id "pic")
                               (:input :type "submit" :value "like it!")))))))
@@ -60,12 +70,16 @@
     (file-url *store* small-fname)))
 
 (restas:define-route receive-pic ("likeit")
-  (setf *current-file* nil)
-  (let ((file (hunchentoot:get-parameter "pic")))
-    (push (list (file-url *store* file)
-                (make-thumb file))
-          *pictures*)
-    (restas:redirect 'main)))
+  (setf *current-files* nil)
+  (with-input-from-string (files-param (hunchentoot:get-parameter "pic"))
+    (let ((files (read files-param)))
+      (setf *pictures*
+            (nconc (mapcar #'(lambda (file)
+                               (list (file-url *store* file)
+                                     (make-thumb file)))
+                           files)
+                   *pictures*))
+      (restas:redirect 'main))))
 
 (restas:define-route main ("")
   (with-html-output-to-string (sss)

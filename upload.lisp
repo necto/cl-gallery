@@ -17,7 +17,7 @@
 (defvar *store* (make-instance 'files-store :upload-dir "/tmp/" :download-dir "fl/")
   "The location, where the uploaded files will be stored, and where it can be downloaded")
 (defvar *file-stored-callback*
-  #'(lambda (fnames)
+  #'(lambda (fname)
       (format nil "parent.alert(\"finished at: ~a\");" (file-url *store* fname)))
   "The function, being called after the file is received by the hunchentoot,
    copyed into the *upload-dir* under a uniq name.
