@@ -3,6 +3,7 @@
   (:export #:*file-stored-callback*
            #:*store*
            #:*multiple*
+           #:*mime-type*
 
            #:form
 
@@ -12,6 +13,11 @@
 
 (in-package #:upload)
 
+(defvar *mime-type* nil
+  "The substring to be present in the MIME type of the uploaded file.
+   And the filter for files in file-open dialog.
+   Should look like 'image', or 'text' -- one of common media types.
+   If it is not present, no file accepted.")
 (defvar *multiple* nil
   "Whether or not allow user upload multiple files at a time")
 (defvar *store* (make-instance 'files-store :upload-dir "/tmp/" :download-dir "fl/")
@@ -30,18 +36,20 @@
 (defun form (target empty-target)
   "The part responsible for the open-and-upload file dialog.
   CAUTION: the functin must be called from the context of your upload submodule!"
-  (with-html-output-to-string (sss)
-    (htm (:div :id "upload-div"
-               (:form :method "post" :action target
-                      :enctype "multipart/form-data" :id "file-upload"
-                      :target "upload_target_iframe"
-                       ;^^ comment this line to view the post-request respond
-                      (:input :id "file-upload-input" :type "file"
-                              :onChange "document.getElementById(\"file-upload\").submit();"
-                              :name "file" :multiple *multiple*))
-               (:iframe :id "upload_target_iframe" :name "upload_target_iframe"
-                        :src empty-target
-                        :style "width:0;height:0;border:0px solid #fff;")))))
+  (let ((accept (when *mime-type* (format nil "~a/*" *mime-type*))))
+    (with-html-output-to-string (sss)
+      (htm (:div :id "upload-div"
+                 (:form :method "post" :action target
+                        :enctype "multipart/form-data" :id "file-upload"
+                        :target "upload_target_iframe"
+                              ;^^ comment this line to view the post-request respond
+                        (:input :id "file-upload-input" :type "file"
+                                :onChange "document.getElementById(\"file-upload\").submit();"
+                                :name "file" :accept accept
+                              :multiple *multiple*))
+                 (:iframe :id "upload_target_iframe" :name "upload_target_iframe"
+                          :src empty-target
+                          :style "width:0;height:0;border:0px solid #fff;"))))))
 
 (restas:define-route upload-form-main ("form")
   (with-html-output-to-string (sss)
@@ -60,6 +68,12 @@
         (rename-file path (ensure-directories-exist new-path)))
     fname)))
 
+(defun valid-type (param)
+  (destructuring-bind (path file-name content-type) param
+    (declare (ignore path file-name))
+    (when (search *mime-type* content-type)
+        param)))
+
 (restas:define-route upload-file ("upload-file" :method :post)
   (with-html-output-to-string (sss)
     (:script :language "javascript" :type "text/javascript"
@@ -67,10 +81,12 @@
                      (if *multiple*
                          (mapcar #'(lambda (param)
                                      (handle-file-param (cdr param)))
-                                 (remove "file" (hunchentoot:post-parameters*)
-                                         :test (complement #'equal)
-                                         :key #'car))
-                         (handle-file-param (hunchentoot:post-parameter "file"))))))))
+                                 (remove-if (complement #'valid-type)
+                                            (remove "file" (hunchentoot:post-parameters*)
+                                                    :test (complement #'equal)
+                                                    :key #'car)
+                                            :key #'cdr))
+                         (handle-file-param (valid-type (hunchentoot:post-parameter "file")))))))))
 
 (restas:define-route upload-empty-url ("upload-empty-url")
   (with-html-output-to-string (sss)

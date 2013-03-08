@@ -26,6 +26,7 @@
   (upload:*baseurl* '("upload"))
   (upload:*store* *store*)
   (upload:*multiple* t)
+  (upload:*mime-type* "image")
   (upload:*file-stored-callback*
    (lambda (files)
      (when *current-files*
