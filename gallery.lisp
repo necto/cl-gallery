@@ -96,11 +96,16 @@
                   (:link :rel "stylesheet" :type "text/css" :media "screen"
                            :href "static/css/jquery.fancybox-thumbs.css")
                   (:script :language "javascript" :type "text/javascript"
-                           :src "static/js/jquery.fancybox-thumbs.js"))
+                           :src "static/js/jquery.fancybox-thumbs.js")
+                  (:link :rel "stylesheet" :type "text/css" :media "screen"
+                         :href "static/css/gallery.css"))
            (:body (:div :id "controls")
                   (:script :language "javascript" :type "text/javascript"
                            :src "static/js/run-gallery.js")
-                  (:a :href (restas:genurl 'add-pic)
-                      "add a picture")
+                  (:center (:a :href (restas:genurl 'add-pic)
+                               "add a picture"))
+                  (:br)
                   (loop for (pic thumb) in *pictures* do
-                       (htm (:a :href pic :rel "group" :class "fancybox-thumb" (:img :src thumb))))))))
+                       (htm (:div :class "img" 
+                                  (:a :href pic :rel "group" :class "fancybox-thumb"
+                                      (:img :src thumb)))))))))
