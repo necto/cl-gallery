@@ -1,13 +1,13 @@
 
 (defpackage :files-locator
   (:use :cl-user :cl)
-  (:export :files-store
-           :upload-dir
-           :download-dir
+  (:export #:files-store
+           #:upload-dir
+           #:download-dir
 
-           :file-path
-           :file-url
-           :file-pathname))
+           #:file-path
+           #:file-url
+           #:file-pathname))
 
 (in-package :files-locator)
 
@@ -15,11 +15,16 @@
   ((upload-dir
     :initarg :upload-dir
     :reader upload-dir
-    :initform (error "cpecify the upload-dir field"))
+    :initform (error "cpecify the upload-dir field")
+    :documentation
+    "the directory (alogn with the trailing / -- it's important),
+     being used to store all received files")
    (download-dir
     :initarg :download-dir
     :reader download-dir
-    :initform (error "cpecify the download-dir"))))
+    :initform (error "cpecify the download-dir")
+    :documentation
+    "the prefix of the file name as the client will see the url to it.")))
 
 (defgeneric file-path (store fname)
   (:documentation

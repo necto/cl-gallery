@@ -11,11 +11,8 @@
 
 (in-package #:upload)
 
-;(defvar *upload-dir* "/tmp/"
-;  "the directory, being used to store all received files")
-;(defvar *download-dir* "fl/"
-;  "the prefix of the file as the client will see it, after uploading.")
-(defvar *store* (make-instance 'files-store :upload-dir "/tmp/" :download-dir "fl/"))
+(defvar *store* (make-instance 'files-store :upload-dir "/tmp/" :download-dir "fl/")
+  "The location, where the uploaded files will be stored, and where it can be downloaded")
 (defvar *file-stored-callback*
   #'(lambda (fname) (format nil "parent.alert(\"finished at: ~a\");" (file-url *store* fname)))
   "The function, being called after the file is received by the hunchentoot,
