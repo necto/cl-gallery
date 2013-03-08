@@ -21,6 +21,7 @@
 (restas:mount-submodule upl (#:upload)
   (upload:*baseurl* '("upload"))
   (upload:*store* *store*)
+  (upload:*multiple* nil)
   (upload:*file-stored-callback*
    (lambda (file)
      (when *current-file*
@@ -32,10 +33,14 @@
   (with-html-output-to-string (sss)
     (htm "<!DOCTYPE html>"
          (:html (:head (:script :language "javascript" :type "text/javascript"
-                                "function done(preview, file) {document.getElementById(\"preview\").src = preview;
+                                "function done(preview, file) {
+                                                      document.getElementById(\"preview\").src = preview;
                                                       document.getElementById(\"pic\").value = file;}"))
-                (:body (str (upload:form (restas:genurl-submodule
-                                          'upl 'upload:upload-file)))
+                (:body (str (restas:with-context (second (gethash 'upl *submodules*))
+                              (upload:form (restas:genurl-submodule
+                                            'upl 'upload:upload-file)
+                                           (restas:genurl-submodule
+                                            'upl 'upload:upload-empty-url))))
                        (:img :id "preview")
                        (:form :method "get" :action (restas:genurl 'receive-pic)
                               (:input :type "hidden" :name "pic" :value "no-value" :id "pic")
@@ -70,4 +75,3 @@
                       "add a picture")
                   (loop for (pic thumb) in *pictures* do
                        (htm (:a :href pic (:img :src thumb))))))))
-           
