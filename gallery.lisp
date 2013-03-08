@@ -13,8 +13,8 @@
   (restas.directory-publisher:*autoindex* t))
 
 (restas:mount-submodule scripts (#:restas.directory-publisher)
-  (restas.directory-publisher:*directory* #p"./scripts/")
-  (restas.directory-publisher:*baseurl* '("script")))
+  (restas.directory-publisher:*directory* #p"./static/")
+  (restas.directory-publisher:*baseurl* '("static")))
 
 (defparameter *current-files* nil)
 
@@ -46,7 +46,7 @@
   (with-html-output-to-string (sss)
     (htm "<!DOCTYPE html>"
          (:html (:head (:script :language "javascript" :type "text/javascript"
-                                :src "script/preview-updater.js"))
+                                :src "static/js/preview-updater.js"))
                 (:body (str (restas:with-context (second (gethash 'upl *submodules*))
                               (upload:form (restas:genurl-submodule
                                             'upl 'upload:upload-file)
@@ -85,8 +85,22 @@
 (restas:define-route main ("")
   (with-html-output-to-string (sss)
     "<!DOCTYPE html>"
-    (:html (:head)
-           (:body (:a :href (restas:genurl 'add-pic)
+    (:html (:head (:script :language "javascript" :type "text/javascript"
+                           :src "http://code.jquery.com/jquery-1.9.1.min.js")
+                  (:script :language "javascript" :type "text/javascript"
+                           :src "static/js/jquery.mousewheel-3.0.6.pack.js")
+                  (:link :rel "stylesheet" :type "text/css" :media "screen"
+                           :href "static/css/jquery.fancybox.css")
+                  (:script :language "javascript" :type "text/javascript"
+                           :src "static/js/jquery.fancybox.pack.js")
+                  (:link :rel "stylesheet" :type "text/css" :media "screen"
+                           :href "static/css/jquery.fancybox-thumbs.css")
+                  (:script :language "javascript" :type "text/javascript"
+                           :src "static/js/jquery.fancybox-thumbs.js"))
+           (:body (:div :id "controls")
+                  (:script :language "javascript" :type "text/javascript"
+                           :src "static/js/run-gallery.js")
+                  (:a :href (restas:genurl 'add-pic)
                       "add a picture")
                   (loop for (pic thumb) in *pictures* do
-                       (htm (:a :href pic (:img :src thumb))))))))
+                       (htm (:a :href pic :rel "group" :class "fancybox-thumb" (:img :src thumb))))))))
