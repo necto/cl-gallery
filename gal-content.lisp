@@ -1,5 +1,5 @@
 (defpackage :gal-content
-  (:use :cl-user :cl :cl-who :files-locator)
+  (:use :cl-user :cl :cl-who :files-locator :transliterate)
   (:export #:item
            #:item-thumbnail
            #:item-title
@@ -103,7 +103,7 @@
                  :comment comment))
 
 (defun make-album-name (title)
-  (string-trim " " title))
+  (transliterate (string-downcase (string-trim " " title))))
 
 (defun make-album (store file title comment)
   (make-instance 'album

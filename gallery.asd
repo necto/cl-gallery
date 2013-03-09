@@ -5,4 +5,5 @@
                  (:file "gallery" :depends-on ("upload" "files-locator" "gal-content"))
                  (:file "upload" :depends-on ("files-locator"))
                  (:file "files-locator")
-                 (:file "gal-content" :depends-on ("files-locator"))))
+                 (:file "gal-content" :depends-on ("files-locator" "transliterate"))
+                 (:file "transliterate")))
