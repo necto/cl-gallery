@@ -6,7 +6,15 @@
            #:receive-pic
            #:receive-album
            #:add-album
-           #:view-album))
+           #:view-album
+           
+           #:add-pic-render
+           #:add-album-render
+           #:album-list-render
+           #:view-album-render
+
+           #:*drawer*
+           #:*store*))
 
 (in-package #:gallery)
 
@@ -20,9 +28,11 @@
   (restas.directory-publisher:*baseurl* '("static")))
 
 (defparameter *current-files* nil)
-
 (defparameter *albums* nil)
 
+(defclass default-drawer () ())
+
+(defvar *drawer* (make-instance 'default-drawer))
 (defvar *store* (make-instance 'files-store :upload-dir "/tmp/" :download-dir "/gal/files/"))
 
 (defmethod restas:initialize-module-instance :before ((module (eql #.*package*)) context)
@@ -53,39 +63,28 @@
 (defun get-album (name)
   (find name *albums* :key #'album-name :test #'string=))
 
+(defgeneric add-pic-render (drawer form album))
+(defgeneric add-album-render (drawer form) )
+(defgeneric album-list-render (drawer add-album-url albums))
+(defgeneric view-album-render (drawer add-pic-url album))
+
 (restas:define-route add-pic ("add")
   (let ((album (hunchentoot:get-parameter "album")))
-    (with-html-output-to-string (sss nil :prologue t :indent t)
-      (:html (:head (:script :language "javascript" :type "text/javascript"
-                             :src "static/js/preview-updater.js"))
-             (:body (str (restas:with-context (second (gethash 'upl *submodules*))
-                           (upload:form (restas:genurl-submodule
-                                         'upl 'upload:upload-file)
-                                        (restas:genurl-submodule
-                                         'upl 'upload:upload-empty-url))))
-                    (:form :method "get" :action (restas:genurl 'receive-pic)
-                           "Title:" (:input :type "text" :name "title" :value "")
-                           "Comment:" (:input :type "text" :name "comment" :value "")
-                           "Album:" (:input :type "text" :name "album" :value album :readonly t)
-                           (:input :type "hidden" :name "pic" :value "no-value" :id "pic")
-                           (:input :type "submit" :value "like it!"))
-                    (:div :id "preview"))))))
+    (add-pic-render *drawer*
+                    (restas:with-context (second (gethash 'upl *submodules*))
+                      (upload:form (restas:genurl-submodule
+                                    'upl 'upload:upload-file)
+                                   (restas:genurl-submodule
+                                    'upl 'upload:upload-empty-url)))
+                    album)))
 
 (restas:define-route add-album ("new-album")
-  (with-html-output-to-string (sss nil :prologue t :indent t)
-    (:html (:head (:script :language "javascript" :type "text/javascript"
-                           :src "static/js/preview-updater.js"))
-           (:body (str (restas:with-context (second (gethash 'upl *submodules*))
+  (add-album-render *drawer*
+                    (restas:with-context (second (gethash 'upl *submodules*))
                          (upload:form (restas:genurl-submodule
                                        'upl 'upload:upload-file)
                                       (restas:genurl-submodule
-                                       'upl 'upload:upload-empty-url))))
-                  (:form :method "get" :action (restas:genurl 'receive-album)
-                         "Title:" (:input :type "text" :name "title" :value "")
-                         "Comment:" (:input :type "text" :name "comment" :value "")
-                         (:input :type "hidden" :name "pic" :value "no-value" :id "pic")
-                         (:input :type "submit" :value "That's right!"))
-                  (:div :id "preview")))))
+                                       'upl 'upload:upload-empty-url)))))
 
 (defun get-uploaded-pictures (param-name)
   (setf *current-files* nil)
@@ -120,40 +119,11 @@
                            :path path))
 
 (restas:define-route main ("")
-  (with-html-output-to-string (stream nil :prologue t :indent t)
-    (:html (:head (:link :rel "stylesheet" :type "text/css" :media "screen"
-                         :href (gen-static-url "css/gallery.css")))
-           (:body (:center (:a :href (restas:genurl 'add-album)
-                           "new album"))
-                  (:br)
-                  (loop for album in *albums* do
-                       (draw-preview album stream))))))
+  (album-list-render *drawer* (restas:genurl 'add-album) *albums*))
 
 (restas:define-route view-album ("album/:name")
   (let ((album (get-album name)))
     (if album
-        (with-html-output-to-string (stream nil :prologue t :indent t)
-          (:html (:head (:script :language "javascript" :type "text/javascript"
-                           :src "http://code.jquery.com/jquery-1.9.1.min.js")
-                  (:script :language "javascript" :type "text/javascript"
-                           :src (gen-static-url "js/jquery.mousewheel-3.0.6.pack.js"))
-                  (:link :rel "stylesheet" :type "text/css" :media "screen"
-                         :href (gen-static-url "css/jquery.fancybox.css"))
-                  (:script :language "javascript" :type "text/javascript"
-                           :src (gen-static-url "js/jquery.fancybox.pack.js"))
-                  (:link :rel "stylesheet" :type "text/css" :media "screen"
-                         :href (gen-static-url "css/jquery.fancybox-thumbs.css"))
-                  (:script :language "javascript" :type "text/javascript"
-                           :src (gen-static-url "js/jquery.fancybox-thumbs.js"))
-                  (:link :rel "stylesheet" :type "text/css" :media "screen"
-                         :href (gen-static-url "css/gallery.css")))
-                 (:body (:script :language "javascript" :type "text/javascript"
-                                 :src (gen-static-url "js/run-gallery.js"))
-                        (:h1 (str (item-title album)))
-                        (:p (str (item-comment album)))
-                        (:center (:a :href (restas:genurl 'add-pic :album (album-name album))
-                                     "add a picture"))
-                        (:br)
-                        (loop for pic in (album-items album) do
-                             (draw-preview pic stream)))))
+        (view-album-render *drawer* (restas:genurl 'add-pic :album (album-name album)) album)
         (format nil "There is no album with name ~a." name))))
+
