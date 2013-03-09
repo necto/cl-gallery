@@ -1,18 +1,36 @@
 (defpackage :gal-content
   (:use :cl-user :cl :cl-who :files-locator)
   (:export #:item
+           #:item-thumbnail
+           #:item-title
+           #:item-comment
            #:draw-preview
 
            #:picture
            #:make-picture
            #:pic-url
-           #:pic-thumbnail
-           #:pic-title
-           #:pic-comment))
+           
+           #:album
+           #:album-name
+           #:album-items))
+
 
 (in-package :gal-content)
 
-(defclass item () ()
+(defclass item ()
+  ((thumbnail
+    :initarg :thumbnail
+    :reader item-thumbnail
+    :documentation
+    "The url to the small preview picture")
+   (title
+    :initarg :title
+    :reader item-title)
+   (comment
+    :initarg :comment
+    :reader item-comment
+    :documentation
+    "The commentary to the content."))
   (:documentation
    "A general item, representing a gallery-managed item"))
 
@@ -21,20 +39,19 @@
     :initarg :url
     :reader pic-url
     :documentation
-    "The address of the actual full-size content")
-   (thumbnail
-    :initarg :thumbnail
-    :reader pic-thumbnail
+    "The address of the actual full-size content")))
+
+(defclass album (item)
+  ((name
+    :initarg :name
+    :reader album-name
     :documentation
-    "The url to the small preview picture")
-   (title
-    :initarg :title
-    :reader pic-title)
-   (comment
-    :initarg :comment
-    :reader pic-comment
+    "The uniq string, used to designate the album among others.")
+   (items
+    :initform nil
+    :reader album-items
     :documentation
-    "The commentary to the content.")))
+    "The collection of all items, contained in the album")))
 
 (defgeneric draw-preview (content stream)
   (:documentation "draw a small preview composition"))
@@ -43,18 +60,29 @@
   (error "You must redefine draw-preview in order to display your content in a gallery"))
 
 (defmethod draw-preview ((content picture) stream)
-  (with-accessors ((url pic-url) (thumbnail pic-thumbnail)
-                   (title pic-title) (comment pic-comment)) content
-    (cl-who:with-html-output (sss stream)
+  (with-accessors ((url pic-url) (thumbnail item-thumbnail)
+                   (title item-title) (comment item-comment)) content
+    (with-html-output (sss stream)
       (:div :class "img" 
             (:a :href url :rel "group" :class "fancybox-thumb" :title title
                 (:img :src thumbnail))
             (:div :class "desc" (:b (str title))
                   (:br) (str comment))))))
 
+(defmethod draw-preview ((content album) stream)
+  (with-accessors ((name album-name) (thumbnail item-thumbnail)
+                   (title item-title) (comment item-comment) (items album-items))
+      content
+    (with-html-output (sss stream)
+      (:div :class "img"
+            (:a :href name :title title
+                (:img :src thumbnail))
+            (:div :class "desc" (:b (str title))
+                  (:br) (str comment))))))
+
 (defun gen-small-pic-fname (fname)
   (format nil "~a.thumb.~a" (subseq fname 0 (- (length fname) 4))
-          (subseq fname (- (length fname) 3) (length fname))))
+          (subseq fname (- (length fname) 3) (length fname))));reattach the extension
 
 (defun make-thumb (store fname)
   (let ((small-fname (gen-small-pic-fname fname)))

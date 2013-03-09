@@ -43,21 +43,20 @@
                files)))))
 
 (restas:define-route add-pic ("add")
-  (with-html-output-to-string (sss)
-    (htm "<!DOCTYPE html>"
-         (:html (:head (:script :language "javascript" :type "text/javascript"
-                                :src "static/js/preview-updater.js"))
-                (:body (str (restas:with-context (second (gethash 'upl *submodules*))
-                              (upload:form (restas:genurl-submodule
-                                            'upl 'upload:upload-file)
-                                           (restas:genurl-submodule
-                                            'upl 'upload:upload-empty-url))))
-                       (:form :method "get" :action (restas:genurl 'receive-pic)
-                              "Title:" (:input :type "text" :name "title" :value "")
-                              "Comment:" (:input :type "comment" :name "comment" :value "")
-                              (:input :type "hidden" :name "pic" :value "no-value" :id "pic")
-                              (:input :type "submit" :value "like it!"))
-                       (:div :id "preview"))))))
+  (with-html-output-to-string (sss nil :prologue t :indent t)
+    (:html (:head (:script :language "javascript" :type "text/javascript"
+                           :src "static/js/preview-updater.js"))
+           (:body (str (restas:with-context (second (gethash 'upl *submodules*))
+                         (upload:form (restas:genurl-submodule
+                                       'upl 'upload:upload-file)
+                                      (restas:genurl-submodule
+                                       'upl 'upload:upload-empty-url))))
+                  (:form :method "get" :action (restas:genurl 'receive-pic)
+                         "Title:" (:input :type "text" :name "title" :value "")
+                         "Comment:" (:input :type "comment" :name "comment" :value "")
+                         (:input :type "hidden" :name "pic" :value "no-value" :id "pic")
+                         (:input :type "submit" :value "like it!"))
+                  (:div :id "preview")))))
 
 (restas:define-route receive-pic ("likeit")
   (setf *current-files* nil)
@@ -73,8 +72,7 @@
       (restas:redirect 'main))))
 
 (restas:define-route main ("")
-  (with-html-output-to-string (stream)
-    "<!DOCTYPE html>"
+  (with-html-output-to-string (stream nil :prologue t :indent t)
     (:html (:head (:script :language "javascript" :type "text/javascript"
                            :src "http://code.jquery.com/jquery-1.9.1.min.js")
                   (:script :language "javascript" :type "text/javascript"
