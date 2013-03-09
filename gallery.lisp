@@ -1,6 +1,6 @@
 
 (restas:define-module #:gallery
-    (:use :cl :cl-who :files-locator)
+    (:use :cl :cl-who :files-locator :gal-content)
   (:export #:main
            #:add-pic
            #:receive-pic))
@@ -59,19 +59,6 @@
                               (:input :type "submit" :value "like it!"))
                        (:div :id "preview"))))))
 
-(defun gen-small-pic-fname (fname)
-  (format nil "~a.thumb.~a" (subseq fname 0 (- (length fname) 4))
-          (subseq fname (- (length fname) 3) (length fname))))
-
-(defun make-thumb (fname)
-  (let ((small-fname (gen-small-pic-fname fname)))
-    (sb-ext:run-program "/usr/bin/convert" 
-                        (list "-scale" "100x100" 
-                              (file-pathname *store* fname)
-                              (file-pathname *store* small-fname))
-                        :wait t)
-    (file-url *store* small-fname)))
-
 (restas:define-route receive-pic ("likeit")
   (setf *current-files* nil)
   (with-input-from-string (files-param (hunchentoot:get-parameter "pic"))
@@ -80,16 +67,13 @@
           (comment (hunchentoot:get-parameter "comment")))
       (setf *pictures*
             (nconc (mapcar #'(lambda (file)
-                               (list (file-url *store* file)
-                                     (make-thumb file)
-                                     title
-                                     comment))
+                               (make-picture *store* file title comment))
                            files)
                    *pictures*))
       (restas:redirect 'main))))
 
 (restas:define-route main ("")
-  (with-html-output-to-string (sss)
+  (with-html-output-to-string (stream)
     "<!DOCTYPE html>"
     (:html (:head (:script :language "javascript" :type "text/javascript"
                            :src "http://code.jquery.com/jquery-1.9.1.min.js")
@@ -111,9 +95,5 @@
                   (:center (:a :href (restas:genurl 'add-pic)
                                "add a picture"))
                   (:br)
-                  (loop for (pic thumb title comment) in *pictures* do
-                       (htm (:div :class "img" 
-                                  (:a :href pic :rel "group" :class "fancybox-thumb" :title title
-                                      (:img :src thumb))
-                                  (:div :class "desc" (:b (str title))
-                                        (:br) (str comment)))))))))
+                  (loop for content in *pictures* do
+                       (draw-preview content stream))))))
