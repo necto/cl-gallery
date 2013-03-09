@@ -11,6 +11,7 @@
            #:pic-url
            
            #:album
+           #:make-album
            #:album-name
            #:album-items))
 
@@ -49,7 +50,7 @@
     "The uniq string, used to designate the album among others.")
    (items
     :initform nil
-    :reader album-items
+    :accessor album-items
     :documentation
     "The collection of all items, contained in the album")))
 
@@ -73,12 +74,13 @@
   (with-accessors ((name album-name) (thumbnail item-thumbnail)
                    (title item-title) (comment item-comment) (items album-items))
       content
-    (with-html-output (sss stream)
-      (:div :class "img"
-            (:a :href name :title title
-                (:img :src thumbnail))
-            (:div :class "desc" (:b (str title))
-                  (:br) (str comment))))))
+    (let ((url (format nil "album/~a" name)))
+      (with-html-output (sss stream)
+        (:div :class "img"
+              (:a :href url :title title
+                  (:img :src thumbnail))
+              (:div :class "desc" (:b (str title))
+                    (:br) (str comment)))))))
 
 (defun gen-small-pic-fname (fname)
   (format nil "~a.thumb.~a" (subseq fname 0 (- (length fname) 4))
@@ -99,3 +101,13 @@
                  :thumbnail (file-url store (make-thumb store file))
                  :title title
                  :comment comment))
+
+(defun make-album-name (title)
+  (string-trim " " title))
+
+(defun make-album (store file title comment)
+  (make-instance 'album
+                 :name (make-album-name title)
+                 :title title
+                 :comment comment
+                 :thumbnail (file-url store (make-thumb store file))))
