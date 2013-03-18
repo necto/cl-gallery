@@ -21,7 +21,7 @@
      being used to store all received files")
    (download-dir
     :initarg :download-dir
-    :reader download-dir
+    :accessor download-dir ;; <-- It must be reader!! 
     :initform (error "cpecify the download-dir")
     :documentation
     "the prefix of the file name as the client will see the url to it.")))

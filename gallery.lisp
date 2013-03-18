@@ -18,14 +18,16 @@
 
 (in-package #:gallery)
 
-(restas:mount-submodule files (#:restas.directory-publisher)
+(restas:mount-module files (#:restas.directory-publisher)
+  (:inherit-parent-context t)
+  (:url "files")
   (restas.directory-publisher:*directory* #p"/tmp/")
-  (restas.directory-publisher:*baseurl* '("files"))
   (restas.directory-publisher:*autoindex* t))
 
-(restas:mount-submodule static (#:restas.directory-publisher)
-  (restas.directory-publisher:*directory* #p"./static/")
-  (restas.directory-publisher:*baseurl* '("static")))
+(restas:mount-module static (#:restas.directory-publisher)
+  (:inherit-parent-context t)
+  (:url "static")
+  (restas.directory-publisher:*directory* #p"./static/"))
 
 (defparameter *current-files* nil)
 (defparameter *albums* nil)
@@ -38,10 +40,14 @@
 (defmethod restas:initialize-module-instance :before ((module (eql #.*package*)) context)
   (restas:with-context context
     (setf *store* (make-instance 'files-store :upload-dir "/tmp/"
-                                 :download-dir (format nil "/~a/~a" (car *baseurl*) "files/")))))
+                                 :download-dir "/gal/files/"))));(restas:genurl 'files.route))))) ;(format nil "/~a/~a" (car *baseurl*) "files/")))))
+;(defmethod restas:initialize-module-instance :after ((module (eql #.*package*)) context)
+;  (restas:with-context context
+;    (setf (download-dir *store*) (restas:genurl 'files.route))))
 
-(restas:mount-submodule upl (#:upload)
-  (upload:*baseurl* '("upload"))
+(restas:mount-module upl (#:upload)
+  (:url "upload")
+  (:inherit-parent-context t)
   (upload:*store* *store*)
   (upload:*multiple* t)
   (upload:*mime-type* nil)
@@ -71,20 +77,18 @@
 (restas:define-route add-pic ("add")
   (let ((album (hunchentoot:get-parameter "album")))
     (add-pic-render *drawer*
-                    (restas:with-context (second (gethash 'upl *submodules*))
-                      (upload:form (restas:genurl-submodule
-                                    'upl 'upload:upload-file)
-                                   (restas:genurl-submodule
-                                    'upl 'upload:upload-empty-url)))
+                    (restas:with-context
+                        (second (gethash 'upl (gethash :modules (gethash (find-package :gallery) restas::*pkgmodules-traits*))))
+                      (upload:form (restas:genurl 'upl.upload-file)
+                                   (restas:genurl 'upl.upload-empty-url)))
                     album)))
 
 (restas:define-route add-album ("new-album")
   (add-album-render *drawer*
-                    (restas:with-context (second (gethash 'upl *submodules*))
-                         (upload:form (restas:genurl-submodule
-                                       'upl 'upload:upload-file)
-                                      (restas:genurl-submodule
-                                       'upl 'upload:upload-empty-url)))))
+                    (restas:with-context
+                        (second (gethash 'upl (gethash :modules (gethash (find-package :gallery) restas::*pkgmodules-traits*))))
+                      (upload:form (restas:genurl 'upl.upload-file)
+                                   (restas:genurl 'upl.upload-empty-url)))))
 
 (defun get-uploaded-pictures (param-name)
   (setf *current-files* nil)
@@ -115,8 +119,7 @@
     (restas:redirect 'main)))
 
 (defun gen-static-url (path)
-  (restas:genurl-submodule 'static 'restas.directory-publisher:route
-                           :path path))
+  (restas:genurl 'static.route :path path))
 
 (restas:define-route main ("")
   (album-list-render *drawer* (restas:genurl 'add-album) *albums*))

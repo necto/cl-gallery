@@ -7,7 +7,7 @@
 (restas:define-route main ("")
   "<H1> hello wooo! </h1>")
 
-(restas:mount-submodule test-gallery (#:gallery)
-  (gallery:*baseurl* '("gal")))
+(restas:mount-module test-gallery (#:gallery)
+  (:url "gal"))
 
 (restas:start '#:restas.hello-world :port 8080)
