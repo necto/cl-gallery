@@ -40,10 +40,7 @@
 (defmethod restas:initialize-module-instance :before ((module (eql #.*package*)) context)
   (restas:with-context context
     (setf *store* (make-instance 'files-store :upload-dir "/tmp/"
-                                 :download-dir "/gal/files/"))));(restas:genurl 'files.route))))) ;(format nil "/~a/~a" (car *baseurl*) "files/")))))
-;(defmethod restas:initialize-module-instance :after ((module (eql #.*package*)) context)
-;  (restas:with-context context
-;    (setf (download-dir *store*) (restas:genurl 'files.route))))
+                                 :download-dir (restas:genurl 'files.route :path "")))))
 
 (restas:mount-module upl (#:upload)
   (:url "upload")
@@ -129,9 +126,3 @@
     (if album
         (view-album-render *drawer* (restas:genurl 'add-pic :album (album-name album)) album)
         (format nil "There is no album with name ~a." name))))
-
-(restas:define-route aga ("tst")
-  (with-html-output-to-string (sss)
-    (:a :href "lala" "one")
-    (:a :href "/lala" "two")
-    (:a :href "gal/lala" "three")))
