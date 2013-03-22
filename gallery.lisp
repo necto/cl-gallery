@@ -74,21 +74,21 @@
 (defgeneric album-list-render (drawer add-album-url albums))
 (defgeneric view-album-render (drawer add-pic-url album))
 
+(defun upload-form ()
+  (restas:with-context
+      (second (gethash 'upl (gethash :modules (gethash (find-package :gallery) restas::*pkgmodules-traits*))))
+    (upload:form (restas:genurl 'upl.upload-file)
+                 (restas:genurl 'upl.upload-empty-url))))
+
 (restas:define-route add-pic ("add")
   (let ((album (hunchentoot:get-parameter "album")))
     (add-pic-render *drawer*
-                    (restas:with-context
-                        (second (gethash 'upl (gethash :modules (gethash (find-package :gallery) restas::*pkgmodules-traits*))))
-                      (upload:form (restas:genurl 'upl.upload-file)
-                                   (restas:genurl 'upl.upload-empty-url)))
+                    (upload-form)
                     album)))
 
 (restas:define-route add-album ("new-album")
   (add-album-render *drawer*
-                    (restas:with-context
-                        (second (gethash 'upl (gethash :modules (gethash (find-package :gallery) restas::*pkgmodules-traits*))))
-                      (upload:form (restas:genurl 'upl.upload-file)
-                                   (restas:genurl 'upl.upload-empty-url)))))
+                    (upload-form)))
 
 (defun get-uploaded-pictures (param-name)
   (setf *current-files* nil)
@@ -130,3 +130,8 @@
         (view-album-render *drawer* (restas:genurl 'add-pic :album (album-name album)) album)
         (format nil "There is no album with name ~a." name))))
 
+(restas:define-route aga ("tst")
+  (with-html-output-to-string (sss)
+    (:a :href "lala" "one")
+    (:a :href "/lala" "two")
+    (:a :href "gal/lala" "three")))
