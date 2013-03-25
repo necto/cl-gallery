@@ -35,12 +35,11 @@
 (defclass default-drawer () ())
 
 (defvar *drawer* (make-instance 'default-drawer))
-(defvar *store* (make-instance 'files-store :upload-dir "/tmp/" :download-dir "/gal/files/"))
+(defvar *store* (make-instance 'files-store :upload-dir "/tmp/" :download-dir "wrong"))
 
-(defmethod restas:initialize-module-instance :before ((module (eql #.*package*)) context)
+(defmethod restas:initialize-module-instance :after ((module (eql #.*package*)) context)
   (restas:with-context context
-    (setf *store* (make-instance 'files-store :upload-dir "/tmp/"
-                                 :download-dir (restas:genurl 'files.route :path "")))))
+    (setf (download-dir *store*) (restas:genurl 'files.route :path ""))))
 
 (restas:mount-module upl (#:upload)
   (:url "upload")
@@ -72,8 +71,7 @@
 (defgeneric view-album-render (drawer add-pic-url album))
 
 (defun upload-form ()
-  (restas:with-context
-      (second (gethash 'upl (gethash :modules (gethash (find-package :gallery) restas::*pkgmodules-traits*))))
+  (restas::with-module (restas:find-submodule 'upl)
     (upload:form (restas:genurl 'upl.upload-file)
                  (restas:genurl 'upl.upload-empty-url))))
 
