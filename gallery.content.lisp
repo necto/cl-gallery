@@ -1,4 +1,4 @@
-(defpackage :gal-content
+(defpackage :gallery.content
   (:use :cl-user :cl :cl-who :files-locator :transliterate)
   (:export #:item
            #:item-thumbnail
@@ -16,7 +16,7 @@
            #:album-items))
 
 
-(in-package :gal-content)
+(in-package :gallery.content)
 
 (defclass item ()
   ((thumbnail

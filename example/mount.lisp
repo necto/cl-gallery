@@ -11,6 +11,7 @@
   You can try it <a href=\"gal/\" >here </a>")
 
 (restas:mount-module test-gallery (#:gallery)
-  (:url "gal"))
+  (:url "gal")
+  (gallery.internal.render:*render* (make-instance 'gallery.default-render:handler)))
 
-(restas:start '#:gallery.example :port 8081)
+(restas:start '#:gallery.example :port 8082)

@@ -1,5 +1,5 @@
 (defpackage #:gallery.default-render
-  (:use #:cl #:cl-who #:gallery #:gallery.policy.render)
+  (:use #:cl #:cl-who #:gallery #:gallery.content #:gallery.policy.render)
   (:export #:handler))
 
 (in-package #:gallery.default-render)
@@ -9,7 +9,7 @@
 (defun gen-static-url (path)
   (restas:genurl 'static.route :path path))
 
-(defmethod add-pic-render ((drawer handler) form album)
+(defmethod theme.add-pic ((drawer handler) form album)
   (with-html-output-to-string (sss nil :prologue t :indent t)
     (:html (:head (:script :language "javascript" :type "text/javascript"
                            :src "static/js/preview-updater.js"))
@@ -22,7 +22,7 @@
                          (:input :type "submit" :value "like it!"))
                   (:div :id "preview")))))
 
-(defmethod add-album-render ((drawer handler) form)
+(defmethod theme.add-album ((drawer handler) form)
   (with-html-output-to-string (sss nil :prologue t :indent t)
     (:html (:head (:script :language "javascript" :type "text/javascript"
                            :src "static/js/preview-updater.js"))
@@ -34,7 +34,7 @@
                          (:input :type "submit" :value "That is right!"))
                   (:div :id "preview")))))
 
-(defmethod album-list-render ((drawer handler) add-album-url albums)
+(defmethod theme.album-list ((drawer handler) add-album-url albums)
   (with-html-output-to-string (stream nil :prologue t :indent t)
     (:html (:head (:link :rel "stylesheet" :type "text/css" :media "screen"
                          :href (gen-static-url "css/gallery.css")))
@@ -44,7 +44,7 @@
                   (loop for album in albums do
                        (draw-preview album stream))))))
 
-(defmethod view-album-render ((drawer handler) add-pic-url album)
+(defmethod theme.view-album ((drawer handler) add-pic-url album)
   (with-html-output-to-string (stream nil :prologue t :indent t)
     (:html (:head (:script :language "javascript" :type "text/javascript"
                            :src "http://code.jquery.com/jquery-1.9.1.min.js")

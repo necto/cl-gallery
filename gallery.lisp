@@ -1,6 +1,22 @@
 
+(restas:define-policy render
+  (:interface-package #:gallery.policy.render)
+  (:interface-method-template "THEME.~A")
+  (:internal-package #:gallery.internal.render)
+  (:internal-function-template "~A-RENDER")
+  
+  (define-method add-pic (form album)
+    "Draw a page with form for a picture addendum")
+  (define-method add-album (form)
+    "Draw a page for new album form")
+  (define-method album-list (add-album-url albums)
+    "Draw a list of all albums")
+  (define-method view-album (add-pic-url album)
+    "Draw all pictures in the album"))
+
 (restas:define-module #:gallery
-    (:use :cl :cl-who :files-locator :gal-content)
+    (:use :cl :files-locator :gallery.content
+          :gallery.internal.render)
   (:export #:main
            #:add-pic
            #:receive-pic
@@ -13,25 +29,12 @@
            #:album-list-render
            #:view-album-render
 
+           #:static.route
+
            #:*drawer*
            #:*store*))
 
 (in-package #:gallery)
-
-(restas:define-policy render
-  (:interface-package #:gallery.policy.render)
-  (:interface-method-template "~A-render")
-  (:internal-package #:gallery.internal.render)
-  (:internal-function-template "theme.~A")
-  
-  (define-method add-pic (form album)
-    "Draw a page with form for a picture addendum")
-  (define-method add-album (form)
-    "Draw a page for new album form")
-  (define-method album-list (add-album-url albums)
-    "Draw a list of all albums")
-  (define-method view-album (add-pic-url album)
-    "Draw all pictures in the album"))
 
 (restas:mount-module files (#:restas.directory-publisher)
   (:inherit-parent-context t)
