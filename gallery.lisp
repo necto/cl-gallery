@@ -18,6 +18,21 @@
 
 (in-package #:gallery)
 
+(restas:define-policy render
+  (:interface-package #:gallery.policy.render)
+  (:interface-method-template "~A-render")
+  (:internal-package #:gallery.internal.render)
+  (:internal-function-template "theme.~A")
+  
+  (define-method add-pic (form album)
+    "Draw a page with form for a picture addendum")
+  (define-method add-album (form)
+    "Draw a page for new album form")
+  (define-method album-list (add-album-url albums)
+    "Draw a list of all albums")
+  (define-method view-album (add-pic-url album)
+    "Draw all pictures in the album"))
+
 (restas:mount-module files (#:restas.directory-publisher)
   (:inherit-parent-context t)
   (:url "files")
@@ -32,9 +47,6 @@
 (defparameter *current-files* nil)
 (defparameter *albums* nil)
 
-(defclass default-drawer () ())
-
-(defvar *drawer* (make-instance 'default-drawer))
 (defvar *store* (make-instance 'files-store :upload-dir "/tmp/" :download-dir "wrong"))
 
 (defmethod restas:initialize-module-instance :after ((module (eql #.*package*)) context)
@@ -65,11 +77,6 @@
 (defun get-album (name)
   (find name *albums* :key #'album-name :test #'string=))
 
-(defgeneric add-pic-render (drawer form album))
-(defgeneric add-album-render (drawer form) )
-(defgeneric album-list-render (drawer add-album-url albums))
-(defgeneric view-album-render (drawer add-pic-url album))
-
 (defun upload-form ()
   (restas::with-module (restas:find-submodule 'upl)
     (upload:form (restas:genurl 'upl.upload-file)
@@ -77,13 +84,11 @@
 
 (restas:define-route add-pic ("add")
   (let ((album (hunchentoot:get-parameter "album")))
-    (add-pic-render *drawer*
-                    (upload-form)
+    (add-pic-render (upload-form)
                     album)))
 
 (restas:define-route add-album ("new-album")
-  (add-album-render *drawer*
-                    (upload-form)))
+  (add-album-render (upload-form)))
 
 (defun get-uploaded-pictures (param-name)
   (setf *current-files* nil)
@@ -113,14 +118,11 @@
           *albums*)
     (restas:redirect 'main)))
 
-(defun gen-static-url (path)
-  (restas:genurl 'static.route :path path))
-
 (restas:define-route main ("")
-  (album-list-render *drawer* (restas:genurl 'add-album) *albums*))
+  (album-list-render (restas:genurl 'add-album) *albums*))
 
 (restas:define-route view-album ("album/:name")
   (let ((album (get-album name)))
     (if album
-        (view-album-render *drawer* (restas:genurl 'add-pic :album (album-name album)) album)
+        (view-album-render (restas:genurl 'add-pic :album (album-name album)) album)
         (format nil "There is no album with name ~a." name))))
