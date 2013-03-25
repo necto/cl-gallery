@@ -23,11 +23,6 @@
            #:receive-album
            #:add-album
            #:view-album
-           
-           #:add-pic-render
-           #:add-album-render
-           #:album-list-render
-           #:view-album-render
 
            #:static.route
 
@@ -45,7 +40,8 @@
 (restas:mount-module static (#:restas.directory-publisher)
   (:inherit-parent-context t)
   (:url "static")
-  (restas.directory-publisher:*directory* #p"./static/"))
+  (restas.directory-publisher:*directory*
+   (asdf:system-relative-pathname '#:gallery #p"static/")))
 
 (defparameter *current-files* nil)
 (defparameter *albums* nil)
