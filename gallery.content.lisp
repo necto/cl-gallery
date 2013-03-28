@@ -54,13 +54,13 @@
     :documentation
     "The collection of all items, contained in the album")))
 
-(defgeneric draw-preview (content stream)
+(defgeneric draw-preview-impl (content stream)
   (:documentation "draw a small preview composition"))
 
-(defmethod draw-preview ((content item) stream)
+(defmethod draw-preview-impl ((content item) stream)
   (error "You must redefine draw-preview in order to display your content in a gallery"))
 
-(defmethod draw-preview ((content picture) stream)
+(defmethod draw-preview-impl ((content picture) stream)
   (with-accessors ((url pic-url) (thumbnail item-thumbnail)
                    (title item-title) (comment item-comment)) content
     (with-html-output (sss stream)
@@ -70,7 +70,7 @@
             (:div :class "desc" (:b (str title))
                   (:br) (str comment))))))
 
-(defmethod draw-preview ((content album) stream)
+(defmethod draw-preview-impl ((content album) stream)
   (with-accessors ((name album-name) (thumbnail item-thumbnail)
                    (title item-title) (comment item-comment) (items album-items))
       content
@@ -81,6 +81,12 @@
                   (:img :src thumbnail))
               (:div :class "desc" (:b (str title))
                     (:br) (str comment)))))))
+
+(defun draw-preview (content &optional (stream nil))
+  (if stream
+      (draw-preview-impl content stream)
+      (with-html-output-to-string (stream nil :prologue nil :indent t)
+        (draw-preview-impl content stream))))
 
 (defun gen-small-pic-fname (fname)
   (format nil "~a.thumb.~a" (subseq fname 0 (- (length fname) 4))

@@ -15,6 +15,8 @@ function done(preview, file)
         preview.forEach(function (element, index, array){
             var img = document.createElement("img");
             img.src = element;
+            img.style.maxHeight = "100%";
+            img.style.maxWidth = "100%";
             prew.appendChild(img);
         });
     }
