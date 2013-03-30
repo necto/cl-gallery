@@ -9,9 +9,9 @@
     "Draw a page with form for a picture addendum")
   (define-method add-album (form)
     "Draw a page for new album form")
-  (define-method album-list (add-album-url albums)
+  (define-method album-list (add-album-url rem-album-url albums)
     "Draw a list of all albums")
-  (define-method view-album (add-pic-url album)
+  (define-method view-album (add-pic-url rem-pic-url album)
     "Draw all pictures in the album")
   (define-method choose-album (action albums)
     "Show the table with checkboxes for user to choose some albums")
@@ -31,6 +31,8 @@
            #:view-album
            #:choose-pic
            #:choose-album
+           #:delete-pic
+           #:delete-album
 
            #:static.route
 
@@ -103,7 +105,7 @@
   (with-input-from-string (files-param (hunchentoot:get-parameter param-name))
     (read files-param)))
 
-(restas:define-route receive-pic ("likeit")
+(restas:define-route receive-pic ("accept-pic")
   (let ((files (get-uploaded-pictures "pic"))
         (title (hunchentoot:get-parameter "title"))
         (comment (hunchentoot:get-parameter "comment"))
@@ -119,7 +121,7 @@
             (restas:redirect 'view-album :name album-name))
           (format nil "album ~a not found" album-name)))))
 
-(restas:define-route receive-album ("thatsright")
+(restas:define-route receive-album ("accept-album")
   (let ((files (get-uploaded-pictures "pic"))
         (title (hunchentoot:get-parameter "title"))
         (comment (hunchentoot:get-parameter "comment")))
@@ -129,13 +131,19 @@
     (restas:redirect 'main)))
 
 (restas:define-route main ("")
-  (album-list-render (restas:genurl 'add-album) *albums*))
+  (album-list-render (restas:genurl 'add-album)
+                     (format nil "~a?action=~a" (restas:genurl 'choose-album)
+                             (restas:genurl 'delete-album))
+                     *albums*))
 
 (restas:define-route view-album ("album/:name")
   (let ((album (get-album name)))
     (if album
-        (view-album-render (restas:genurl 'add-pic :album (album-name album)) album)
-        (now-such-album-render name))))
+        (view-album-render (restas:genurl 'add-pic :album (album-name album))
+                           (format nil "~a?action=~a" (restas:genurl 'choose-pic :name name)
+                                   (restas:genurl 'delete-pic :name name))
+                           album)
+        (no-such-album-render name))))
 
 (restas:define-route choose-pic ("album/choose/:name")
   (let ((album (get-album name))
@@ -147,3 +155,23 @@
 (restas:define-route choose-album ("choose")
   (let ((action (hunchentoot:get-parameter "action")))
     (choose-album-render action *albums*)))
+
+(defun get-parameter-values (name)
+  (mapcar #'cdr
+          (remove name (hunchentoot:get-parameters*)
+                  :test (complement #'equal)
+                  :key #'car)))
+
+(restas:define-route delete-pic ("album/delete/:name" :method :get)
+  (let ((pics (get-parameter-values "chosen"))
+        (album (get-album name)))
+    (if album
+        (album-delete-items album (mapcar #'parse-integer pics)))
+    (restas:redirect 'view-album :name name)))
+
+(restas:define-route delete-album ("delete-album")
+  (let ((albums (mapcar #'parse-integer (get-parameter-values "chosen"))))
+    (setf *albums* (remove-if #'(lambda (item)
+                                  (find (item-id item) albums :test #'equal))
+                              *albums*))
+    (restas:redirect 'main)))

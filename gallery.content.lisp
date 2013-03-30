@@ -1,6 +1,7 @@
 (defpackage :gallery.content
   (:use :cl-user :cl :cl-who :files-locator :transliterate)
   (:export #:item
+           #:item-id
            #:item-thumbnail
            #:item-title
            #:item-comment
@@ -13,7 +14,9 @@
            #:album
            #:make-album
            #:album-name
-           #:album-items))
+           #:album-items
+           #:album-delete-items
+           #:album-find-item))
 
 
 (in-package :gallery.content)
@@ -135,3 +138,13 @@
                  :title title
                  :comment comment
                  :thumbnail (file-url store (make-thumb store file))))
+
+(defun album-find-item (album item-id)
+  (let ((items (album-items album)))
+    (find item-id items :test #'equal :key #'item-id)))
+
+(defun album-delete-items (album ids)
+  (setf (album-items album)
+        (remove-if #'(lambda (item)
+                       (find (item-id item) ids :test #'equal))
+                   (album-items album))))

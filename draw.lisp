@@ -34,12 +34,14 @@
                          (:input :type "submit" :value "That is right!"))
                   (:div :id "preview")))))
 
-(defmethod theme.album-list ((drawer handler) add-album-url albums)
+(defmethod theme.album-list ((drawer handler) add-album-url rem-album-url albums)
   (with-html-output-to-string (stream nil :prologue t :indent t)
     (:html (:head (:link :rel "stylesheet" :type "text/css" :media "screen"
                          :href (gen-static-url "css/gallery.css")))
            (:body (:center (:a :href add-album-url
-                           "new album"))
+                           "new album")
+                           (:a :href rem-album-url
+                               "delete album"))
                   (:br)
                   (loop for album in albums do
                        (draw-preview album nil stream))))))
@@ -54,57 +56,45 @@
                          (loop for album in albums do
                               (draw-preview album "chosen" stream)))))))
 
-(defmethod theme.view-album ((drawer handler) add-pic-url album)
-  (with-html-output-to-string (stream nil :prologue t :indent t)
-    (:html (:head (:script :language "javascript" :type "text/javascript"
-                           :src "http://code.jquery.com/jquery-1.9.1.min.js")
-                  (:script :language "javascript" :type "text/javascript"
-                           :src (gen-static-url "js/jquery.mousewheel-3.0.6.pack.js"))
-                  (:link :rel "stylesheet" :type "text/css" :media "screen"
-                         :href (gen-static-url "css/jquery.fancybox.css"))
-                  (:script :language "javascript" :type "text/javascript"
-                           :src (gen-static-url "js/jquery.fancybox.pack.js"))
-                  (:link :rel "stylesheet" :type "text/css" :media "screen"
-                         :href (gen-static-url "css/jquery.fancybox-thumbs.css"))
-                  (:script :language "javascript" :type "text/javascript"
-                           :src (gen-static-url "js/jquery.fancybox-thumbs.js"))
-                  (:link :rel "stylesheet" :type "text/css" :media "screen"
-                         :href (gen-static-url "css/gallery.css")))
-           (:body (:script :language "javascript" :type "text/javascript"
-                           :src (gen-static-url "js/run-gallery.js"))
-                  (:h1 (str (item-title album)))
-                  (:p (str (item-comment album)))
-                  (:center (:a :href add-pic-url
-                               "add a picture"))
-                  (:br)
-                  (loop for pic in (album-items album) do
-                       (draw-preview pic nil stream))))))
+(defmacro in-album-page (stream &body body)
+  `(with-html-output-to-string (,stream nil :prologue t :indent t)
+     (:html (:head (:script :language "javascript" :type "text/javascript"
+                            :src "http://code.jquery.com/jquery-1.9.1.min.js")
+                   (:script :language "javascript" :type "text/javascript"
+                            :src (gen-static-url "js/jquery.mousewheel-3.0.6.pack.js"))
+                   (:link :rel "stylesheet" :type "text/css" :media "screen"
+                          :href (gen-static-url "css/jquery.fancybox.css"))
+                   (:script :language "javascript" :type "text/javascript"
+                            :src (gen-static-url "js/jquery.fancybox.pack.js"))
+                   (:link :rel "stylesheet" :type "text/css" :media "screen"
+                          :href (gen-static-url "css/jquery.fancybox-thumbs.css"))
+                   (:script :language "javascript" :type "text/javascript"
+                            :src (gen-static-url "js/jquery.fancybox-thumbs.js"))
+                   (:link :rel "stylesheet" :type "text/css" :media "screen"
+                          :href (gen-static-url "css/gallery.css")))
+            (:body (:script :language "javascript" :type "text/javascript"
+                            :src (gen-static-url "js/run-gallery.js"))
+                   (:h1 (str (item-title album)))
+                   (:p (str (item-comment album)))
+                   ,@body))))
+
+(defmethod theme.view-album ((drawer handler) add-pic-url rem-pic-url album)
+  (in-album-page stream
+    (:center (:a :href add-pic-url
+                 "add a picture")
+             (:a :href rem-pic-url
+                 "remove some pictures"))
+    (:br)
+    (loop for pic in (album-items album) do
+         (draw-preview pic nil stream))))
 
 (defmethod theme.choose-picture ((drawer handler) action album)
-  (with-html-output-to-string (stream nil :prologue t :indent t)
-    (:html (:head (:script :language "javascript" :type "text/javascript"
-                           :src "http://code.jquery.com/jquery-1.9.1.min.js")
-                  (:script :language "javascript" :type "text/javascript"
-                           :src (gen-static-url "js/jquery.mousewheel-3.0.6.pack.js"))
-                  (:link :rel "stylesheet" :type "text/css" :media "screen"
-                         :href (gen-static-url "css/jquery.fancybox.css"))
-                  (:script :language "javascript" :type "text/javascript"
-                           :src (gen-static-url "js/jquery.fancybox.pack.js"))
-                  (:link :rel "stylesheet" :type "text/css" :media "screen"
-                         :href (gen-static-url "css/jquery.fancybox-thumbs.css"))
-                  (:script :language "javascript" :type "text/javascript"
-                           :src (gen-static-url "js/jquery.fancybox-thumbs.js"))
-                  (:link :rel "stylesheet" :type "text/css" :media "screen"
-                         :href (gen-static-url "css/gallery.css")))
-           (:body (:script :language "javascript" :type "text/javascript"
-                           :src (gen-static-url "js/run-gallery.js"))
-                  (:h1 (str (item-title album)))
-                  (:p (str (item-comment album)))
-                  (:form :action action
-                         (:center (:input :type "submit"))
-                         (:br)
-                         (loop for pic in (album-items album) do
-                              (draw-preview pic "chosen" stream)))))))
+  (in-album-page stream
+    (:form :action action
+           (:center (:input :type "submit"))
+           (:br)
+           (loop for pic in (album-items album) do
+                (draw-preview pic "chosen" stream)))))
 
 (defmethod theme.no-such-album ((drawer handler) name)
   (format nil "<h2> There is no album named ~a </h2>" name))
