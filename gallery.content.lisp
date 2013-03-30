@@ -19,7 +19,12 @@
 (in-package :gallery.content)
 
 (defclass item ()
-  ((thumbnail
+  ((id
+    :initarg :id
+    :reader item-id
+    :documentation
+    "An unique identificator for the item")
+   (thumbnail
     :initarg :thumbnail
     :reader item-thumbnail
     :documentation
@@ -54,25 +59,30 @@
     :documentation
     "The collection of all items, contained in the album")))
 
-(defgeneric draw-preview-impl (content stream)
-  (:documentation "draw a small preview composition"))
+(defgeneric draw-preview-impl (content chkbox stream)
+  (:documentation "draw a small preview composition.
+   The chkbox is the name of checkbox group, if nil - no checkbox"))
 
-(defmethod draw-preview-impl ((content item) stream)
+(defmethod draw-preview-impl ((content item) chkbox stream)
   (error "You must redefine draw-preview in order to display your content in a gallery"))
 
-(defmethod draw-preview-impl ((content picture) stream)
+(defmethod draw-preview-impl ((content picture) chkbox stream)
   (with-accessors ((url pic-url) (thumbnail item-thumbnail)
-                   (title item-title) (comment item-comment)) content
+                   (title item-title) (comment item-comment)
+                   (id item-id)) content
     (with-html-output (sss stream)
       (:div :class "img" 
             (:a :href url :rel "group" :class "fancybox-thumb" :title title
                 (:img :src thumbnail))
             (:div :class "desc" (:b (str title))
-                  (:br) (str comment))))))
+                  (:br) (str comment))
+            (when chkbox
+              (htm (:input :type "checkbox" :name chkbox :value id)))))))
 
-(defmethod draw-preview-impl ((content album) stream)
+(defmethod draw-preview-impl ((content album) chkbox stream)
   (with-accessors ((name album-name) (thumbnail item-thumbnail)
-                   (title item-title) (comment item-comment) (items album-items))
+                   (title item-title) (comment item-comment)
+                   (items album-items) (id item-id))
       content
     (let ((url (format nil "album/~a" name)))
       (with-html-output (sss stream)
@@ -80,13 +90,19 @@
               (:a :href url :title title
                   (:img :src thumbnail))
               (:div :class "desc" (:b (str title))
-                    (:br) (str comment)))))))
+                    (:br) (str comment))
+              (when chkbox
+                (htm (:input :type "checkbox" :name chkbox :value id))))))))
 
-(defun draw-preview (content &optional (stream nil))
+(defun draw-preview (content &optional (chkbox nil) (stream nil))
   (if stream
-      (draw-preview-impl content stream)
+      (draw-preview-impl content chkbox stream)
       (with-html-output-to-string (stream nil :prologue nil :indent t)
-        (draw-preview-impl content stream))))
+        (draw-preview-impl content chkbox stream))))
+
+(let ((counter 0))
+  (defun generate-next-id ()
+    (incf counter)))
 
 (defun gen-small-pic-fname (fname)
   (format nil "~a.thumb.~a" (subseq fname 0 (- (length fname) 4))
@@ -103,6 +119,7 @@
 
 (defun make-picture (store file title comment)
   (make-instance 'picture
+                 :id (generate-next-id)
                  :url (file-url store file)
                  :thumbnail (file-url store (make-thumb store file))
                  :title title
@@ -113,6 +130,7 @@
 
 (defun make-album (store file title comment)
   (make-instance 'album
+                 :id (generate-next-id)
                  :name (make-album-name title)
                  :title title
                  :comment comment

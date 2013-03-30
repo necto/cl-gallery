@@ -12,7 +12,13 @@
   (define-method album-list (add-album-url albums)
     "Draw a list of all albums")
   (define-method view-album (add-pic-url album)
-    "Draw all pictures in the album"))
+    "Draw all pictures in the album")
+  (define-method choose-album (action albums)
+    "Show the table with checkboxes for user to choose some albums")
+  (define-method choose-picture (action album)
+    "Show the current album for user to choose some pictures from it")
+  (define-method no-such-album (name)
+    "Show the not found message fro the album named name"))
 
 (restas:define-module #:gallery
     (:use :cl :files-locator :gallery.content
@@ -23,6 +29,8 @@
            #:receive-album
            #:add-album
            #:view-album
+           #:choose-pic
+           #:choose-album
 
            #:static.route
 
@@ -45,6 +53,7 @@
 
 (defparameter *current-files* nil)
 (defparameter *albums* nil)
+(defparameter *items* nil)
 
 (defvar *store* (make-instance 'files-store :upload-dir "/tmp/" :download-dir "wrong"))
 
@@ -106,6 +115,7 @@
       (if album
           (progn
             (setf (album-items album) (nconc pics (album-items album)))
+            (setf *items* (nconc pics *items*))
             (restas:redirect 'view-album :name album-name))
           (format nil "album ~a not found" album-name)))))
 
@@ -113,8 +123,9 @@
   (let ((files (get-uploaded-pictures "pic"))
         (title (hunchentoot:get-parameter "title"))
         (comment (hunchentoot:get-parameter "comment")))
-    (push (make-album *store* (first files) title comment)
-          *albums*)
+    (let ((album (make-album *store* (first files) title comment)))
+      (push album *albums*)
+      (push album *items*))
     (restas:redirect 'main)))
 
 (restas:define-route main ("")
@@ -124,4 +135,15 @@
   (let ((album (get-album name)))
     (if album
         (view-album-render (restas:genurl 'add-pic :album (album-name album)) album)
-        (format nil "There is no album with name ~a." name))))
+        (now-such-album-render name))))
+
+(restas:define-route choose-pic ("album/choose/:name")
+  (let ((album (get-album name))
+        (action (hunchentoot:get-parameter "action")))
+    (if album
+        (choose-picture-render action album)
+        (no-such-album-render name))))
+
+(restas:define-route choose-album ("choose")
+  (let ((action (hunchentoot:get-parameter "action")))
+    (choose-album-render action *albums*)))
