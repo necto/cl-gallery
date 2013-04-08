@@ -116,7 +116,7 @@
           (album (get-album album-name)))
       (if album
           (progn
-            (setf (album-items album) (nconc pics (album-items album)))
+            (setf (album-items album) (append pics (album-items album)))
             (setf *items* (nconc pics *items*))
             (restas:redirect 'view-album :name album-name))
           (format nil "album ~a not found" album-name)))))
@@ -132,16 +132,16 @@
 
 (restas:define-route main ("")
   (album-list-render (restas:genurl 'add-album)
-                     (format nil "~a?action=~a" (restas:genurl 'choose-album)
-                             (restas:genurl 'delete-album))
+                     (restas:genurl 'choose-album
+                                    :action (restas:genurl 'delete-album))
                      *albums*))
 
 (restas:define-route view-album ("album/:name")
   (let ((album (get-album name)))
     (if album
         (view-album-render (restas:genurl 'add-pic :album (album-name album))
-                           (format nil "~a?action=~a" (restas:genurl 'choose-pic :name name)
-                                   (restas:genurl 'delete-pic :name name))
+                           (restas:genurl 'choose-pic :name name
+                                          :action (restas:genurl 'delete-pic :name name))
                            album)
         (no-such-album-render name))))
 
