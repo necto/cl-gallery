@@ -33,13 +33,14 @@
    Depending on *multiple* the fnames will be the string, or the list of
    strings, corresponding to the list of accepted files.")
 
-(defun form (target empty-target)
+(defun form ()
   "The part responsible for the open-and-upload file dialog.
   CAUTION: the functin must be called from the context of your upload submodule!"
+  (restas:assert-native-module)
   (let ((accept (when *mime-type* (format nil "~a/*" *mime-type*))))
     (with-html-output-to-string (sss)
       (htm (:div :id "upload-div"
-                 (:form :method "post" :action target
+                 (:form :method "post" :action (restas:genurl* 'upload-file)
                         :enctype "multipart/form-data" :id "file-upload"
                         :target "upload_target_iframe"
                               ;^^ comment this line to view the post-request respond
@@ -48,14 +49,12 @@
                                 :name "file" :accept accept
                               :multiple *multiple*))
                  (:iframe :id "upload_target_iframe" :name "upload_target_iframe"
-                          :src empty-target
+                          :src (restas:genurl* 'upload-empty-url)
                           :style "width:0;height:0;border:0px solid #fff;"))))))
 
 (restas:define-route upload-form-main ("form")
   (with-html-output-to-string (sss)
-    (htm (:html (:head)
-                (:body (str (form (restas:genurl 'upload-file)
-                                  (restas:genurl 'upload-empty-url))))))))
+    (htm (:html (:head) (:body (str (form)))))))
 
 (defun generate-uniq-fname (base)
   (format nil "~a.~a" (get-universal-time) base))

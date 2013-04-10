@@ -88,9 +88,9 @@
   (find name *albums* :key #'album-name :test #'string=))
 
 (defun upload-form ()
-  (restas::with-module (restas:find-submodule 'upl)
-    (upload:form (restas:genurl 'upl.upload-file)
-                 (restas:genurl 'upl.upload-empty-url))))
+  (restas:assert-native-module)
+  (restas:in-submodule 'upl
+    (upload:form)))
 
 (restas:define-route add-pic ("add")
   (let ((album (hunchentoot:get-parameter "album")))
