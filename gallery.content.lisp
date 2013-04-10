@@ -1,5 +1,5 @@
 (defpackage :gallery.content
-  (:use :cl-user :cl :cl-who :files-locator :transliterate)
+  (:use :cl-user :cl :files-locator :transliterate)
   (:export #:item
            #:item-id
            #:item-thumbnail
@@ -61,47 +61,6 @@
     :accessor album-items
     :documentation
     "The collection of all items, contained in the album")))
-
-(defgeneric draw-preview-impl (content chkbox stream)
-  (:documentation "draw a small preview composition.
-   The chkbox is the name of checkbox group, if nil - no checkbox"))
-
-(defmethod draw-preview-impl ((content item) chkbox stream)
-  (error "You must redefine draw-preview in order to display your content in a gallery"))
-
-(defmethod draw-preview-impl ((content picture) chkbox stream)
-  (with-accessors ((url pic-url) (thumbnail item-thumbnail)
-                   (title item-title) (comment item-comment)
-                   (id item-id)) content
-    (with-html-output (sss stream)
-      (:div :class "img" 
-            (:a :href url :rel "group" :class "fancybox-thumb" :title title
-                (:img :src thumbnail))
-            (:div :class "desc" (:b (str title))
-                  (:br) (str comment))
-            (when chkbox
-              (htm (:input :type "checkbox" :name chkbox :value id)))))))
-
-(defmethod draw-preview-impl ((content album) chkbox stream)
-  (with-accessors ((name album-name) (thumbnail item-thumbnail)
-                   (title item-title) (comment item-comment)
-                   (items album-items) (id item-id))
-      content
-    (let ((url (format nil "album/~a" name)))
-      (with-html-output (sss stream)
-        (:div :class "img"
-              (:a :href url :title title
-                  (:img :src thumbnail))
-              (:div :class "desc" (:b (str title))
-                    (:br) (str comment))
-              (when chkbox
-                (htm (:input :type "checkbox" :name chkbox :value id))))))))
-
-(defun draw-preview (content &optional (chkbox nil) (stream nil))
-  (if stream
-      (draw-preview-impl content chkbox stream)
-      (with-html-output-to-string (stream nil :prologue nil :indent t)
-        (draw-preview-impl content chkbox stream))))
 
 (let ((counter 0))
   (defun generate-next-id ()

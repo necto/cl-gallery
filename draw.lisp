@@ -96,5 +96,33 @@
            (loop for pic in (album-items album) do
                 (draw-preview pic "chosen" stream)))))
 
+(defmethod theme.preview ((drawer handler) (content picture) chkbox)
+  (with-accessors ((url pic-url) (thumbnail item-thumbnail)
+                   (title item-title) (comment item-comment)
+                   (id item-id)) content
+    (with-html-output-to-string (sss nil :prologue nil :indent t)
+      (:div :class "img" 
+            (:a :href url :rel "group" :class "fancybox-thumb" :title title
+                (:img :src thumbnail))
+            (:div :class "desc" (:b (str title))
+                  (:br) (str comment))
+            (when chkbox
+              (htm (:input :type "checkbox" :name chkbox :value id)))))))
+
+(defmethod theme.preview ((drawer handler) (content album) chkbox)
+  (with-accessors ((name album-name) (thumbnail item-thumbnail)
+                   (title item-title) (comment item-comment)
+                   (items album-items) (id item-id))
+      content
+    (let ((url (format nil "album/~a" name)))
+      (with-html-output-to-string (sss nil :prologue nil :indent t)
+        (:div :class "img"
+              (:a :href url :title title
+                  (:img :src thumbnail))
+              (:div :class "desc" (:b (str title))
+                    (:br) (str comment))
+              (when chkbox
+                (htm (:input :type "checkbox" :name chkbox :value id))))))))
+
 (defmethod theme.no-such-album ((drawer handler) name)
   (format nil "<h2> There is no album named ~a </h2>" name))

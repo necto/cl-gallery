@@ -18,7 +18,10 @@
   (define-method choose-picture (action album)
     "Show the current album for user to choose some pictures from it")
   (define-method no-such-album (name)
-    "Show the not found message fro the album named name"))
+    "Show the not found message fro the album named name")
+  (define-method preview (content chkbox)
+  "draw a small preview composition.
+   The chkbox is the name of checkbox group, if nil - no checkbox"))
 
 (restas:define-module #:gallery
     (:use :cl :files-locator :gallery.content
@@ -175,3 +178,9 @@
                                   (find (item-id item) albums :test #'equal))
                               *albums*))
     (restas:redirect 'main)))
+
+(defun draw-preview (content &optional (chkbox nil) (stream nil))
+  (if stream
+      (write-string (preview-render content chkbox) stream)
+      (preview-render content chkbox)))
+
