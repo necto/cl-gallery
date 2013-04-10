@@ -1,5 +1,6 @@
 (defpackage #:gallery.default-render
-  (:use #:cl #:cl-who #:gallery #:gallery.content #:gallery.policy.render)
+  (:use #:cl #:cl-who #:gallery #:gallery.content
+        #:gallery.policy.render #:gallery.internal.render)
   (:export #:handler))
 
 (in-package #:gallery.default-render)
@@ -43,8 +44,7 @@
                            (:a :href rem-album-url
                                "delete album"))
                   (:br)
-                  (loop for album in albums do
-                       (draw-preview album nil stream))))))
+                  (albums-grid-render albums nil stream)))))
 
 (defmethod theme.choose-album ((drawer handler) action albums)
   (with-html-output-to-string (stream nil :prologue t :indent t)
@@ -53,8 +53,7 @@
            (:body (:form :action action
                          (:center (:input :type "submit"))
                          (:br)
-                         (loop for album in albums do
-                              (draw-preview album "chosen" stream)))))))
+                         (albums-grid-render albums "chosen" stream))))))
 
 (defmacro in-album-page (stream &body body)
   `(with-html-output-to-string (,stream nil :prologue t :indent t)
@@ -85,22 +84,28 @@
              (:a :href rem-pic-url
                  "remove some pictures"))
     (:br)
-    (loop for pic in (album-items album) do
-         (draw-preview pic nil stream))))
+    (pics-grid-render album nil stream)))
 
 (defmethod theme.choose-picture ((drawer handler) action album)
   (in-album-page stream
     (:form :action action
            (:center (:input :type "submit"))
            (:br)
-           (loop for pic in (album-items album) do
-                (draw-preview pic "chosen" stream)))))
+           (pics-grid-render album "chosen" stream))))
 
-(defmethod theme.preview ((drawer handler) (content picture) chkbox)
+(defmethod theme.pics-grid ((drawer handler) album chkbox stream)
+  (loop for pic in (album-items album) do
+       (preview-render pic chkbox stream)))
+
+(defmethod theme.albums-grid ((drawer handler) albums chkbox stream)
+  (loop for alb in albums do
+       (preview-render alb chkbox stream)))
+
+(defmethod theme.preview ((drawer handler) (content picture) chkbox stream)
   (with-accessors ((url pic-url) (thumbnail item-thumbnail)
                    (title item-title) (comment item-comment)
                    (id item-id)) content
-    (with-html-output-to-string (sss nil :prologue nil :indent t)
+    (with-html-output (stream nil :prologue nil :indent t)
       (:div :class "img" 
             (:a :href url :rel "group" :class "fancybox-thumb" :title title
                 (:img :src thumbnail))
@@ -109,13 +114,13 @@
             (when chkbox
               (htm (:input :type "checkbox" :name chkbox :value id)))))))
 
-(defmethod theme.preview ((drawer handler) (content album) chkbox)
+(defmethod theme.preview ((drawer handler) (content album) chkbox stream)
   (with-accessors ((name album-name) (thumbnail item-thumbnail)
                    (title item-title) (comment item-comment)
                    (items album-items) (id item-id))
       content
     (let ((url (format nil "album/~a" name)))
-      (with-html-output-to-string (sss nil :prologue nil :indent t)
+      (with-html-output (stream nil :prologue nil :indent t)
         (:div :class "img"
               (:a :href url :title title
                   (:img :src thumbnail))
