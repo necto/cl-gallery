@@ -19,13 +19,13 @@
     "Show the current album for user to choose some pictures from it")
   (define-method no-such-album (name)
     "Show the not found message fro the album named name")
-  (define-method pics-grid (album chkbox stream)
+  (define-method pics-grid (album chkbox)
     "Draw all pictures from the given album, and supply them by
      the checkbox if given.")
-  (define-method albums-grid (albums chkbox stream)
+  (define-method albums-grid (albums chkbox)
     "Draw all albums using small preview icons, and supply them
      by the checkbox named chkbox, if non-nil")
-  (define-method preview (content chkbox stream)
+  (define-method preview (content chkbox)
   "draw a small preview composition.
    The chkbox is the name of checkbox group, if nil - no checkbox"))
 
@@ -188,14 +188,14 @@
                               *albums*))
     (restas:redirect 'main)))
 
-(defun albums-grid (&optional (chkbox nil) (stream nil))
+(defun albums-grid (&optional (chkbox nil))
   (restas:assert-native-module)
-  (albums-grid-render *albums* chkbox stream))
+  (albums-grid-render *albums* chkbox))
 
-(defun album-pics-grid (album &optional (chkbox nil) (stream nil))
+(defun album-pics-grid (album &optional (chkbox nil))
   (restas:assert-native-module)
-  (pics-grid-render album chkbox stream))
+  (pics-grid-render album chkbox))
 
-(defun draw-preview (content &optional (chkbox nil) (stream nil))
-  (preview-render content chkbox stream))
+(defun draw-preview (content &optional (chkbox nil))
+  (preview-render content chkbox))
 
