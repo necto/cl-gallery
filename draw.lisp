@@ -10,7 +10,7 @@
 (defun gen-static-url (path)
   (restas:genurl 'static.route :path path))
 
-(defmethod theme.add-pic ((drawer handler) form album)
+(defmethod theme.add-pic ((drawer handler) form father father-name)
   (with-html-output-to-string (sss nil :prologue t :indent t)
     (:html (:head (:script :language "javascript" :type "text/javascript"
                            :src "static/js/preview-updater.js"))
@@ -18,12 +18,13 @@
                   (:form :method "get" :action (restas:genurl 'receive-pic)
                          "Title:" (:input :type "text" :name "title" :value "")
                          "Comment:" (:input :type "text" :name "comment" :value "")
-                         "Album:" (:input :type "text" :name "album" :value album :readonly t)
+                         "Father:" (str father-name)
+                         (:input :type "hidden" :name "father" :value father :readonly t)
                          (:input :type "hidden" :name "pic" :value "no-value" :id "pic")
                          (:input :type "submit" :value "like it!"))
                   (:div :id "preview")))))
 
-(defmethod theme.add-album ((drawer handler) form)
+(defmethod theme.add-album ((drawer handler) form father father-name)
   (with-html-output-to-string (sss nil :prologue t :indent t)
     (:html (:head (:script :language "javascript" :type "text/javascript"
                            :src "static/js/preview-updater.js"))
@@ -31,31 +32,13 @@
                   (:form :method "get" :action (restas:genurl 'receive-album)
                          "Title:" (:input :type "text" :name "title" :value "")
                          "Comment:" (:input :type "text" :name "comment" :value "")
+                         "Father:" (str father-name)
+                         (:input :type "hidden" :name "father" :value father :readonly t)
                          (:input :type "hidden" :name "pic" :value "no-value" :id "pic")
                          (:input :type "submit" :value "That is right!"))
                   (:div :id "preview")))))
 
-(defmethod theme.album-list ((drawer handler) add-album-url rem-album-url albums)
-  (with-html-output-to-string (stream nil :prologue t :indent t)
-    (:html (:head (:link :rel "stylesheet" :type "text/css" :media "screen"
-                         :href (gen-static-url "css/gallery.css")))
-           (:body (:center (:a :href add-album-url
-                           "new album")
-                           (:a :href rem-album-url
-                               "delete album"))
-                  (:br)
-                  (str (albums-grid-render albums nil))))))
-
-(defmethod theme.choose-album ((drawer handler) action albums)
-  (with-html-output-to-string (stream nil :prologue t :indent t)
-    (:html (:head (:link :rel "stylesheet" :type "text/css" :media "screen"
-                         :href (gen-static-url "css/gallery.css")))
-           (:body (:form :action action
-                         (:center (:input :type "submit"))
-                         (:br)
-                         (str (albums-grid-render albums "chosen")))))))
-
-(defmacro in-album-page (stream &body body)
+(defmacro in-album-page (stream album &body body)
   `(with-html-output-to-string (,stream nil :prologue t :indent t)
      (:html (:head (:script :language "javascript" :type "text/javascript"
                             :src "http://code.jquery.com/jquery-1.9.1.min.js")
@@ -73,21 +56,23 @@
                           :href (gen-static-url "css/gallery.css")))
             (:body (:script :language "javascript" :type "text/javascript"
                             :src (gen-static-url "js/run-gallery.js"))
-                   (:h1 (str (item-title album)))
-                   (:p (str (item-comment album)))
+                   (:h1 (str (item-title ,album)))
+                   (:p (str (item-comment ,album)))
                    ,@body))))
 
-(defmethod theme.view-album ((drawer handler) add-pic-url rem-pic-url album)
-  (in-album-page stream
+(defmethod theme.view-album ((drawer handler) add-pic-url add-alb-url rem-pic-url album)
+  (in-album-page stream album
     (:center (:a :href add-pic-url
                  "add a picture")
+             (:a :href add-alb-url
+                 "add an album")
              (:a :href rem-pic-url
-                 "remove some pictures"))
+                 "remove some items"))
     (:br)
     (str (pics-grid-render album nil))))
 
 (defmethod theme.choose-picture ((drawer handler) action album)
-  (in-album-page stream
+  (in-album-page stream album
     (:form :action action
            (:center (:input :type "submit"))
            (:br)
@@ -97,11 +82,6 @@
   (with-output-to-string (str)
     (loop for pic in (album-items album) do
          (write-string (preview-render pic chkbox) str))))
-
-(defmethod theme.albums-grid ((drawer handler) albums chkbox)
-  (with-output-to-string (str)
-    (loop for alb in albums do
-         (write-string (preview-render alb chkbox) str))))
 
 (defmethod theme.preview ((drawer handler) (content picture) chkbox)
   (with-accessors ((url pic-url) (thumbnail item-thumbnail)
@@ -121,7 +101,7 @@
                    (title item-title) (comment item-comment)
                    (items album-items) (id item-id))
       content
-    (let ((url (format nil "album/~a" name)))
+    (let ((url (restas:genurl 'gallery:view-album :id id)))
       (with-html-output-to-string (str nil :prologue nil :indent t)
         (:div :class "img"
               (:a :href url :title title

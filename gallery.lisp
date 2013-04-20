@@ -5,26 +5,21 @@
   (:internal-package #:gallery.internal.render)
   (:internal-function-template "~A-RENDER")
   
-  (define-method add-pic (form album)
+  (define-method add-pic (form album album-name)
     "Draw a page with form for a picture addendum")
-  (define-method add-album (form)
+  (define-method add-album (form father father-name)
     "Draw a page for new album form")
-  (define-method album-list (add-album-url rem-album-url albums)
-    "Draw a list of all albums")
-  (define-method view-album (add-pic-url rem-pic-url album)
+  (define-method view-album (add-pic-url add-alb-url rem-pic-url album)
     "Draw all pictures in the album")
   (define-method choose-album (action albums)
     "Show the table with checkboxes for user to choose some albums")
   (define-method choose-picture (action album)
     "Show the current album for user to choose some pictures from it")
-  (define-method no-such-album (name)
+  (define-method no-such-album (id)
     "Show the not found message fro the album named name")
   (define-method pics-grid (album chkbox)
     "Draw all pictures from the given album, and supply them by
      the checkbox if given.")
-  (define-method albums-grid (albums chkbox)
-    "Draw all albums using small preview icons, and supply them
-     by the checkbox named chkbox, if non-nil")
   (define-method preview (content chkbox)
   "draw a small preview composition.
    The chkbox is the name of checkbox group, if nil - no checkbox"))
@@ -39,9 +34,7 @@
            #:add-album
            #:view-album
            #:choose-pic
-           #:choose-album
            #:delete-pic
-           #:delete-album
            
            #:albums-grid
            #:album-pics-grid
@@ -66,8 +59,8 @@
    (asdf:system-relative-pathname '#:gallery #p"static/")))
 
 (defparameter *current-files* nil)
-(defparameter *albums* nil)
-(defparameter *items* nil)
+(defparameter *items* (list (make-root-album "Hi, bro." "root album")))
+(defparameter *root-album-id* (item-id (first *items*)))
 
 (defvar *store* (make-instance 'files-store :upload-dir "/tmp/" :download-dir "wrong"))
 
@@ -96,8 +89,12 @@
                        files)
                files)))))
 
-(defun get-album (name)
-  (find name *albums* :key #'album-name :test #'string=))
+(defun safe-parse-integer (str)
+  (let ((int (parse-integer str :junk-allowed t)))
+    (if int int 0)))
+
+(defun get-item (id)
+  (find id *items* :key #'item-id :test #'=))
 
 (defun upload-form ()
   (restas:assert-native-module)
@@ -105,12 +102,16 @@
     (upload:form)))
 
 (restas:define-route add-pic ("add")
-  (let ((album (hunchentoot:get-parameter "album")))
+  (let ((father (hunchentoot:get-parameter "father"))
+        (father-name (hunchentoot:get-parameter "father-name")))
     (add-pic-render (upload-form)
-                    album)))
+                    father
+                    father-name)))
 
 (restas:define-route add-album ("new-album")
-  (add-album-render (upload-form)))
+  (let ((father (hunchentoot:get-parameter "father"))
+        (father-name (hunchentoot:get-parameter "father-name")))
+    (add-album-render (upload-form) father father-name )))
 
 (defun get-uploaded-pictures (param-name)
   (setf *current-files* nil)
@@ -121,52 +122,54 @@
   (let ((files (get-uploaded-pictures "pic"))
         (title (hunchentoot:get-parameter "title"))
         (comment (hunchentoot:get-parameter "comment"))
-        (album-name (hunchentoot:get-parameter "album")))
+        (father-id (safe-parse-integer (hunchentoot:get-parameter "father"))))
     (let ((pics (mapcar #'(lambda (file)
                             (make-picture *store* file title comment))
                         files))
-          (album (get-album album-name)))
-      (if album
+          (father (get-item father-id)))
+      (if father
           (progn
-            (setf (album-items album) (append pics (album-items album)))
+            (setf (album-items father) (append pics (album-items father)))
             (setf *items* (nconc pics *items*))
-            (restas:redirect 'view-album :name album-name))
-          (format nil "album ~a not found" album-name)))))
+            (restas:redirect 'view-album :id father-id))
+          (format nil "album ~a not found" father-id)))))
 
 (restas:define-route receive-album ("accept-album")
   (let ((files (get-uploaded-pictures "pic"))
         (title (hunchentoot:get-parameter "title"))
-        (comment (hunchentoot:get-parameter "comment")))
-    (let ((album (make-album *store* (first files) title comment)))
-      (push album *albums*)
-      (push album *items*))
-    (restas:redirect 'main)))
+        (comment (hunchentoot:get-parameter "comment"))
+        (father-id (safe-parse-integer (hunchentoot:get-parameter "father"))))
+    (let ((father (get-item father-id)))
+      (if father
+          (let ((album (make-album *store* (first files) title comment)))
+            (push album (album-items father))
+            (push album *items*)
+            (restas:redirect 'view-album :id father-id))
+          (format nil "album ~a not found" father-id)))))
 
 (restas:define-route main ("")
-  (album-list-render (restas:genurl 'add-album)
-                     (restas:genurl 'choose-album
-                                    :action (restas:genurl 'delete-album))
-                     *albums*))
+  (restas:redirect 'view-album :id *root-album-id*))
 
-(restas:define-route view-album ("album/:name")
-  (let ((album (get-album name)))
+(restas:define-route view-album ("album/:id")
+  (:sift-variables (id #'safe-parse-integer))
+  (let ((album (get-item id)))
     (if album
-        (view-album-render (restas:genurl 'add-pic :album (album-name album))
-                           (restas:genurl 'choose-pic :name name
-                                          :action (restas:genurl 'delete-pic :name name))
+        (view-album-render (restas:genurl 'add-pic :father (item-id album)
+                                          :father-name (album-name album))
+                           (restas:genurl 'add-album :father (item-id album)
+                                          :father-name (album-name album))
+                           (restas:genurl 'choose-pic :id id
+                                          :action (restas:genurl 'delete-pic :id id))
                            album)
-        (no-such-album-render name))))
+        (no-such-album-render id))))
 
-(restas:define-route choose-pic ("album/choose/:name")
-  (let ((album (get-album name))
+(restas:define-route choose-pic ("album/choose/:id")
+  (:sift-variables (id #'safe-parse-integer))
+  (let ((album (get-item id))
         (action (hunchentoot:get-parameter "action")))
     (if album
         (choose-picture-render action album)
-        (no-such-album-render name))))
-
-(restas:define-route choose-album ("choose")
-  (let ((action (hunchentoot:get-parameter "action")))
-    (choose-album-render action *albums*)))
+        (no-such-album-render id))))
 
 (defun get-parameter-values (name)
   (mapcar #'cdr
@@ -174,23 +177,13 @@
                   :test (complement #'equal)
                   :key #'car)))
 
-(restas:define-route delete-pic ("album/delete/:name" :method :get)
+(restas:define-route delete-pic ("album/delete/:id" :method :get)
+  (:sift-variables (id #'safe-parse-integer))
   (let ((pics (get-parameter-values "chosen"))
-        (album (get-album name)))
+        (album (get-item id)))
     (if album
         (album-delete-items album (mapcar #'parse-integer pics)))
-    (restas:redirect 'view-album :name name)))
-
-(restas:define-route delete-album ("delete-album")
-  (let ((albums (mapcar #'parse-integer (get-parameter-values "chosen"))))
-    (setf *albums* (remove-if #'(lambda (item)
-                                  (find (item-id item) albums :test #'equal))
-                              *albums*))
-    (restas:redirect 'main)))
-
-(defun albums-grid (&optional (chkbox nil))
-  (restas:assert-native-module)
-  (albums-grid-render *albums* chkbox))
+    (restas:redirect 'view-album :id id)))
 
 (defun album-pics-grid (album &optional (chkbox nil))
   (restas:assert-native-module)

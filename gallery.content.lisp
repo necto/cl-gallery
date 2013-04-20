@@ -13,10 +13,10 @@
            
            #:album
            #:make-album
+           #:make-root-album
            #:album-name
            #:album-items
-           #:album-delete-items
-           #:album-find-item))
+           #:album-delete-items))
 
 
 (in-package :gallery.content)
@@ -98,9 +98,13 @@
                  :comment comment
                  :thumbnail (file-url store (make-thumb store file))))
 
-(defun album-find-item (album item-id)
-  (let ((items (album-items album)))
-    (find item-id items :test #'equal :key #'item-id)))
+(defun make-root-album (title comment)
+  (make-instance 'album
+                 :id (generate-next-id)
+                 :name (make-album-name title)
+                 :title title
+                 :comment comment
+                 :thumbnail nil))
 
 (defun album-delete-items (album ids)
   (setf (album-items album)
