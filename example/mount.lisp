@@ -12,6 +12,8 @@
 
 (restas:mount-module test-gallery (#:gallery)
   (:url "gal")
-  (gallery.internal.render:*render* (make-instance 'gallery.default-render:handler)))
+  (gallery.internal.render:*render* (make-instance 'gallery.default-render:handler))
+  (gallery.internal.pics-collection:*pics-collection*
+   (gallery.pics-memory-collection:make "hi, <bro>" "It's your root album, yep yep")))
 
 (restas:start '#:gallery.example :port 8082)

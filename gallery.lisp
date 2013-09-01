@@ -24,9 +24,28 @@
   "draw a small preview composition.
    The chkbox is the name of checkbox group, if nil - no checkbox"))
 
+(restas:define-policy pics-collection
+  (:interface-package #:gallery.policy.pics-collection)
+  (:interface-method-template "P-COLL.~A")
+  (:internal-package #:gallery.internal.pics-collection)
+  (:internal-function-template "~A-PIC-COLL")
+
+  (define-method get-item (id)
+    "Get an item (album or picture) from the database by it's unique id")
+  (define-method save-pictures (pics father-id)
+    "Persist a list of pictures pics in album with id father-id.
+     Returns nil if father is absent, and non-nil otherwise. ")
+  (define-method save-album (album father-id)
+    "Persist the album from the album with id father-id.
+     Return nil if father is not found, and non-nil otherwise.")
+  (define-method root-album-id ()
+    "Get the id of the very first album - the root in the tree of all albums"))
+
+
 (restas:define-module #:gallery
     (:use :cl :files-locator :gallery.content
-          :gallery.internal.render)
+          :gallery.internal.render
+          :gallery.internal.pics-collection)
   (:export #:main
            #:add-pic
            #:receive-pic
@@ -59,8 +78,8 @@
    (asdf:system-relative-pathname '#:gallery #p"static/")))
 
 (defparameter *current-files* nil)
-(defparameter *items* (list (make-root-album "Hi, bro." "root album")))
-(defparameter *root-album-id* (item-id (first *items*)))
+;(defparameter *items* (list (make-root-album "Hi, bro." "root album")))
+;(defparameter *root-album-id* (item-id (first *items*)))
 
 (defvar *store* (make-instance 'files-store :upload-dir "/tmp/" :download-dir "wrong"))
 
@@ -92,25 +111,6 @@
 (defun safe-parse-integer (str)
   (let ((int (parse-integer str :junk-allowed t)))
     (if int int 0)))
-
-(defun get-item (id)
-  (find id *items* :key #'item-id :test #'=))
-
-;; Persist a list of pictures pics in album with id father-id.
-;; Returns nil if father is absent, and non-nil otherwise.
-(defun save-pictures (pics father-id)
-  (let ((father (get-item father-id)))
-    (when father
-      (setf (album-items father) (append pics (album-items father)))
-      (setf *items* (nconc pics *items*)))))
-
-;; Persist the album from the album with id father-id.
-;; Return nil if father is not found, and non-nil otherwise.
-(defun save-album (album father-id)
-  (let ((father (get-item father-id)))
-    (when father
-      (push album (album-items father))
-      (push album *items*))))
 
 (defun upload-form ()
   (restas:assert-native-module)
@@ -148,25 +148,25 @@
         (title (hunchentoot:get-parameter "title"))
         (comment (hunchentoot:get-parameter "comment"))
         (father-id (safe-parse-integer (hunchentoot:get-parameter "father"))))
-    (if (save-pictures (make-pictures files title comment) father-id)
+    (if (save-pictures-pic-coll (make-pictures files title comment) father-id)
         (restas:redirect 'view-album :id father-id)
-        (format nil "album ~a not found" father-id))))
+        (no-such-album-render father-id))))
 
 (restas:define-route receive-album ("accept-album")
   (let ((files (get-uploaded-pictures "pic"))
         (title (hunchentoot:get-parameter "title"))
         (comment (hunchentoot:get-parameter "comment"))
         (father-id (safe-parse-integer (hunchentoot:get-parameter "father"))))
-    (if (save-album (make-album *store* (first files) title comment) father-id)
+    (if (save-album-pic-coll (make-album *store* (first files) title comment) father-id)
         (restas:redirect 'view-album :id father-id)
-        (format nil "album ~a not found" father-id))))
+        (no-such-album-render father-id))))
           
 (restas:define-route main ("")
-  (restas:redirect 'view-album :id *root-album-id*))
+  (restas:redirect 'view-album :id (root-album-id-pic-coll)))
 
 (restas:define-route view-album ("album/:id")
   (:sift-variables (id #'safe-parse-integer))
-  (let ((album (get-item id)))
+  (let ((album (get-item-pic-coll id)))
     (if album
         (view-album-render (restas:genurl 'add-pic :father (item-id album)
                                           :father-name (album-name album))
@@ -179,7 +179,7 @@
 
 (restas:define-route choose-pic ("album/choose/:id")
   (:sift-variables (id #'safe-parse-integer))
-  (let ((album (get-item id))
+  (let ((album (get-item-pic-coll id))
         (action (hunchentoot:get-parameter "action")))
     (if album
         (choose-picture-render action album)
@@ -194,7 +194,7 @@
 (restas:define-route delete-pic ("album/delete/:id" :method :get)
   (:sift-variables (id #'safe-parse-integer))
   (let ((pics (get-parameter-values "chosen"))
-        (album (get-item id)))
+        (album (get-item-pic-coll id)))
     (if album
         (album-delete-items album (mapcar #'parse-integer pics)))
     (restas:redirect 'view-album :id id)))
