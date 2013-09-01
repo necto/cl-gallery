@@ -1,6 +1,3 @@
 [submodule "restas"]
 	path = restas
 	url = git@github.com:necto/restas.git
-[submodule "mongo-cl-driver"]
-	path = mongo-cl-driver
-	url = git://github.com/archimag/mongo-cl-driver.git
