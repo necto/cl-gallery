@@ -1,5 +1,6 @@
 (defpackage :gallery.content
-  (:use :cl-user :cl :files-locator :transliterate)
+  (:use :cl-user :cl :files-locator :transliterate
+        :gallery.internal.pics-collection)
   (:export #:item
            #:item-id
            #:item-thumbnail
@@ -17,7 +18,6 @@
            #:album-name
            #:album-items
            #:album-delete-items))
-
 
 (in-package :gallery.content)
 
@@ -58,13 +58,10 @@
     "The uniq string, used to designate the album among others.")
    (items
     :initform nil
+    :initarg :items
     :accessor album-items
     :documentation
     "The collection of all items, contained in the album")))
-
-(let ((counter 0))
-  (defun generate-next-id ()
-    (incf counter)))
 
 (defun gen-small-pic-fname (fname)
   (format nil "~a.thumb.~a" (subseq fname 0 (- (length fname) 4))
@@ -81,7 +78,7 @@
 
 (defun make-picture (store file title comment)
   (make-instance 'picture
-                 :id (generate-next-id)
+                 :id (gen-uniq-id-pic-coll)
                  :url (file-url store file)
                  :thumbnail (file-url store (make-thumb store file))
                  :title title
@@ -92,7 +89,7 @@
 
 (defun make-album (store file title comment)
   (make-instance 'album
-                 :id (generate-next-id)
+                 :id (gen-uniq-id-pic-coll)
                  :name (make-album-name title)
                  :title title
                  :comment comment
@@ -100,7 +97,7 @@
 
 (defun make-root-album (title comment)
   (make-instance 'album
-                 :id (generate-next-id)
+                 :id (gen-uniq-id-pic-coll)
                  :name (make-album-name title)
                  :title title
                  :comment comment

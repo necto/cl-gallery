@@ -112,4 +112,4 @@
                 (htm (:input :type "checkbox" :name chkbox :value id))))))))
 
 (defmethod theme.no-such-album ((drawer handler) name)
-  (format nil "<h2> There is no album named ~a </h2>" name))
+  (format nil "<h2> There is no album with id ~a </h2>" name))

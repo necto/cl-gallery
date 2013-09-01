@@ -8,14 +8,14 @@
 
 (defclass handler ()
   ((items
-    :initform (list (make-root-album "" ""))
+    :initform nil
     :initarg :items
     :accessor items
     :documentation
     "A flat collection of all items in the memory")))
 
-(defun make (root-title root-comment)
-  (make-instance 'handler :items (list (make-root-album root-title root-comment))))
+(defun make ()
+  (make-instance 'handler ))
 
 (defmethod p-coll.get-item ((mem handler) id)
   (find id (items mem) :key #'item-id :test #'=))
@@ -26,11 +26,23 @@
       (setf (album-items father) (append pics (album-items father)))
       (setf (items mem) (nconc pics (items mem))))))
 
-(defmethod p-coll.save-albume ((mem handler) album father-id)
+(defmethod p-coll.save-album ((mem handler) album father-id)
   (let ((father (p-coll.get-item mem father-id)))
     (when father
       (push album (album-items father))
       (push album (items mem)))))
 
+(defmethod p-coll.update-album ((mem handler) album)
+  ;Nothing to do, the album is allready in memory, so it updates automatically
+  )
+
+(let ((counter 0))
+  (defmethod p-coll.gen-uniq-id ((mem handler))
+    (incf counter)))
+
 (defmethod p-coll.root-album-id ((mem handler))
-  (item-id (first (items mem))))
+  (if (null (items mem))
+      (item-id (push (make-root-album "Hi, bro..." "I'm here the root")
+                     (items mem)))
+      (item-id (first (items mem)))))
+  

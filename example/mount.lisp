@@ -1,4 +1,5 @@
 (asdf:operate 'asdf:load-op :gallery)
+(asdf:operate 'asdf:load-op :mongo-db-pics-collection)
 
 (restas:define-module #:gallery.example
     (:use :cl)
@@ -14,6 +15,7 @@
   (:url "gal")
   (gallery.internal.render:*render* (make-instance 'gallery.default-render:handler))
   (gallery.internal.pics-collection:*pics-collection*
-   (gallery.pics-memory-collection:make "hi, <bro>" "It's your root album, yep yep")))
+   ;(gallery.pics-memory-collection:make)))
+   (gallery.mongo-db-pics-collection:make :name "gal")))
 
 (restas:start '#:gallery.example :port 8082)
