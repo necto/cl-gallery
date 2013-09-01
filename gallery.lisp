@@ -96,6 +96,22 @@
 (defun get-item (id)
   (find id *items* :key #'item-id :test #'=))
 
+;; Persist a list of pictures pics in album with id father-id.
+;; Returns nil if father is absent, and non-nil otherwise.
+(defun save-pictures (pics father-id)
+  (let ((father (get-item father-id)))
+    (when father
+      (setf (album-items father) (append pics (album-items father)))
+      (setf *items* (nconc pics *items*)))))
+
+;; Persist the album from the album with id father-id.
+;; Return nil if father is not found, and non-nil otherwise.
+(defun save-album (album father-id)
+  (let ((father (get-item father-id)))
+    (when father
+      (push album (album-items father))
+      (push album *items*))))
+
 (defun upload-form ()
   (restas:assert-native-module)
   (restas:in-submodule 'upl
@@ -113,40 +129,38 @@
         (father-name (hunchentoot:get-parameter "father-name")))
     (add-album-render (upload-form) father father-name )))
 
+;; Get a list of uploaded files, given by the url get-parameter,
+;; named param-name
 (defun get-uploaded-pictures (param-name)
   (setf *current-files* nil)
   (with-input-from-string (files-param (hunchentoot:get-parameter param-name))
     (read files-param)))
+
+;; Make a list of pictures using the same title and comment from
+;; a list of just raw files.
+(defun make-pictures (files title comment)
+  (mapcar #'(lambda (file)
+              (make-picture *store* file title comment))
+          files))
 
 (restas:define-route receive-pic ("accept-pic")
   (let ((files (get-uploaded-pictures "pic"))
         (title (hunchentoot:get-parameter "title"))
         (comment (hunchentoot:get-parameter "comment"))
         (father-id (safe-parse-integer (hunchentoot:get-parameter "father"))))
-    (let ((pics (mapcar #'(lambda (file)
-                            (make-picture *store* file title comment))
-                        files))
-          (father (get-item father-id)))
-      (if father
-          (progn
-            (setf (album-items father) (append pics (album-items father)))
-            (setf *items* (nconc pics *items*))
-            (restas:redirect 'view-album :id father-id))
-          (format nil "album ~a not found" father-id)))))
+    (if (save-pictures (make-pictures files title comment) father-id)
+        (restas:redirect 'view-album :id father-id)
+        (format nil "album ~a not found" father-id))))
 
 (restas:define-route receive-album ("accept-album")
   (let ((files (get-uploaded-pictures "pic"))
         (title (hunchentoot:get-parameter "title"))
         (comment (hunchentoot:get-parameter "comment"))
         (father-id (safe-parse-integer (hunchentoot:get-parameter "father"))))
-    (let ((father (get-item father-id)))
-      (if father
-          (let ((album (make-album *store* (first files) title comment)))
-            (push album (album-items father))
-            (push album *items*)
-            (restas:redirect 'view-album :id father-id))
-          (format nil "album ~a not found" father-id)))))
-
+    (if (save-album (make-album *store* (first files) title comment) father-id)
+        (restas:redirect 'view-album :id father-id)
+        (format nil "album ~a not found" father-id))))
+          
 (restas:define-route main ("")
   (restas:redirect 'view-album :id *root-album-id*))
 
