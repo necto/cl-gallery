@@ -20,8 +20,8 @@
     "Draw all pictures from the given album, and supply them by
      the checkbox if given.")
   (define-method preview (content chkbox)
-  "draw a small preview composition.
-   The chkbox is the name of checkbox group, if nil - no checkbox"))
+    "draw a small preview composition.
+     The chkbox is the name of checkbox group, if nil - no checkbox"))
 
 (restas:define-policy pics-collection
   (:interface-package #:gallery.policy.pics-collection)
@@ -43,5 +43,6 @@
     "Generate a new unique id for a next item")
   (define-method root-album-id ()
     "Get the id of the very first album - the root in the tree of all albums"))
+
 
 

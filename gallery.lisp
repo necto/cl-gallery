@@ -19,7 +19,9 @@
            #:static.route
 
            #:*drawer*
-           #:*store*))
+           #:*store*
+
+           #:*extra-params*))
 
 (in-package #:gallery)
 
@@ -35,6 +37,7 @@
   (restas.directory-publisher:*directory*
    (asdf:system-relative-pathname '#:gallery #p"static/")))
 
+(defparameter *extra-params* nil)
 (defparameter *current-files* nil)
 
 (defvar *store* (make-instance 'files-store :upload-dir "/tmp/" :download-dir "wrong"))

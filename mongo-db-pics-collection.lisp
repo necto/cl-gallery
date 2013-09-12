@@ -37,7 +37,7 @@
 
 (defmacro with-a-collection ((coll name db) &body body)
   (let ((base-name (gensym)))
-    `(with-open-db (,base-name db)
+    `(with-open-db (,base-name ,db)
        (let ((,coll (mongo:collection ,base-name ,name)))
          ,@body))))
 
