@@ -11,4 +11,9 @@ $(document).ready(function() {
 		}
 	});
 });
-
+window.onload = function() {
+    $('#masContainer').masonry({
+        columnWidth:110,
+        itemSelector:'.img'
+    });
+};

@@ -88,35 +88,41 @@
         (father-name (hunchentoot:get-parameter "father-name")))
     (add-album-render (upload-form) father father-name )))
 
+;; Parse a list, transmitted through the url get-parameter,
+;; named param-name
+(defun get-list-param (param-name)
+  (with-input-from-string (lst (hunchentoot:get-parameter param-name))
+    (read lst)))
+
 ;; Get a list of uploaded files, given by the url get-parameter,
 ;; named param-name
 (defun get-uploaded-pictures (param-name)
   (setf *current-files* nil)
-  (with-input-from-string (files-param (hunchentoot:get-parameter param-name))
-    (read files-param)))
+  (get-list-param param-name))
 
 ;; Make a list of pictures using the same title and comment from
 ;; a list of just raw files.
-(defun make-pictures (files title comment)
-  (mapcar #'(lambda (file)
+(defun make-pictures (files titles comments)
+  (mapcar #'(lambda (file title comment)
               (make-picture *store* file title comment))
-          files))
+          files titles comments))
 
 (restas:define-route receive-pic ("accept-pic")
   (let ((files (get-uploaded-pictures "pic"))
-        (title (hunchentoot:get-parameter "title"))
-        (comment (hunchentoot:get-parameter "comment"))
+        (titles (get-list-param "title"))
+        (comments (get-list-param "comment"))
         (father-id (safe-parse-integer (hunchentoot:get-parameter "father"))))
-    (if (save-pictures-pic-coll (make-pictures files title comment) father-id)
+    (if (save-pictures-pic-coll (make-pictures files titles comments) father-id)
         (restas:redirect 'view-album :id father-id)
         (no-such-album-render father-id))))
 
 (restas:define-route receive-album ("accept-album")
   (let ((files (get-uploaded-pictures "pic"))
-        (title (hunchentoot:get-parameter "title"))
-        (comment (hunchentoot:get-parameter "comment"))
+        (titles (get-list-param "title"))
+        (comments (get-list-param "comment"))
         (father-id (safe-parse-integer (hunchentoot:get-parameter "father"))))
-    (if (save-album-pic-coll (make-album *store* (first files) title comment) father-id)
+    (if (save-album-pic-coll (make-album *store* (first files)
+                                         (first titles) (first comments)) father-id)
         (restas:redirect 'view-album :id father-id)
         (no-such-album-render father-id))))
           

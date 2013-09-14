@@ -1,11 +1,9 @@
 div.img
   {
   margin:2px;
-  border:1px solid #0000ff;
   float:left;
   text-align:center;
-  width:120px;
-  height:auto;
+  width:105px;
   }
 div.img img
   {
@@ -21,6 +19,16 @@ div.desc
   {
   text-align:center;
   font-weight:normal;
-  width:120px;
   margin:2px;
+  overflow:hidden;
   }
+
+.comment-box, .name-box {
+    margin: 5px 1px;
+    float:left; 
+    width:49%;
+}
+#preview img{
+    width:100%;
+}
+
