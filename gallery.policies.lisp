@@ -21,7 +21,9 @@
      the checkbox if given.")
   (define-method preview (content chkbox)
     "draw a small preview composition.
-     The chkbox is the name of checkbox group, if nil - no checkbox"))
+     The chkbox is the name of checkbox group, if nil - no checkbox")
+  (define-method update-item-form (content)
+    "draw a form for single item update"))
 
 (restas:define-policy pics-collection
   (:interface-package #:gallery.policy.pics-collection)
@@ -37,8 +39,8 @@
   (define-method save-album (album father-id)
     "Persist the album from the album with id father-id.
      Return nil if father is not found, and non-nil otherwise.")
-  (define-method update-album (album)
-    "Persist all changes, made in the album")
+  (define-method update-item (item)
+    "Persist all changes, made in the item")
   (define-method gen-uniq-id ()
     "Generate a new unique id for a next item")
   (define-method root-album-id ()

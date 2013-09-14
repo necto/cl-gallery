@@ -138,9 +138,9 @@
       t)))
 
 ;; Todo: check for deleted pictures from the album, and delete them?
-(defmethod p-coll.update-album ((db handler) album)
+(defmethod p-coll.update-item ((db handler) item)
   (with-pics-collection (pics db)
-    (mongo:update-op pics (son "_id" (item-id album)) (item-to-ht album))))
+    (mongo:update-op pics (son "_id" (item-id item)) (item-to-ht item))))
 
 (defmethod p-coll.gen-uniq-id ((db handler))
   (with-misc-collection (misc db)

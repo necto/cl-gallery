@@ -35,6 +35,9 @@
 (defmethod p-coll.update-album ((mem handler) album)
   ;Nothing to do, the album is allready in memory, so it updates automatically
   )
+(defmethod p-coll.update-item ((mem handler) item)
+  ;Nothing to do
+  )
 
 (let ((counter 0))
   (defmethod p-coll.gen-uniq-id ((mem handler))

@@ -22,6 +22,22 @@ div.desc
   margin:2px;
   overflow:hidden;
   }
+.img .edit-btn
+{
+    width:10px;
+    height:10px;
+    position:absolute;
+    background:white;
+}
+.img .desc .title
+{
+    font-weight:bolder;
+    font-size:larger;
+}
+.img .edit-box input
+{
+    width:90%;
+}
 
 .comment-box, .name-box {
     margin: 5px 1px;

@@ -12,6 +12,7 @@
            #:view-album
            #:choose-pic
            #:delete-pic
+           #:update-item
            
            #:albums-grid
            #:album-pics-grid
@@ -161,8 +162,20 @@
         (album (get-item-pic-coll id)))
     (when album
         (album-delete-items album (mapcar #'parse-integer pics))
-        (update-album-pic-coll album))
+        (update-item-pic-coll album))
     (restas:redirect 'view-album :id id)))
+
+(restas:define-route update-item ("update/:id" :method :get)
+  (:sift-variables (id #'safe-parse-integer))
+  (let ((item (get-item-pic-coll id))
+        (new-title (hunchentoot:get-parameter "title"))
+        (new-comment (hunchentoot:get-parameter "comment")))
+    (when item
+      (setf (item-title item) new-title
+            (item-comment item) new-comment)
+      (update-item-pic-coll item))
+    (preview-render item nil)))
+    
 
 (defun album-pics-grid (album &optional (chkbox nil))
   (restas:assert-native-module)

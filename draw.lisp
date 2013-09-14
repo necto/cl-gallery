@@ -1,11 +1,14 @@
 (defpackage #:gallery.default-render
   (:use #:cl #:cl-who #:gallery #:gallery.content
         #:gallery.policy.render #:gallery.internal.render)
-  (:export #:handler))
+  (:export #:handler
+           #:*edit-items*))
 
 (in-package #:gallery.default-render)
 
 (defclass handler () ())
+
+(defvar *edit-items* t)
 
 (defun gen-static-url (path)
   (restas:genurl 'static.route :path path))
@@ -83,16 +86,36 @@
     (loop for pic in (album-items album) do
          (write-string (preview-render pic chkbox) str))))
 
+(defmethod theme.update-item-form ((drawer handler) (content item))
+  (let* ((update-url (restas:genurl 'gallery:update-item :id (item-id content)))
+         (update-call (format nil "updateItem(~a, \"~a\")" (item-id content) update-url)))
+    (with-html-output-to-string (str nil :prologue nil :indent t)
+      (:form :action (format nil "javascript:~a" update-call)
+             :method "get" :id (format nil "update-form-~a" (item-id content))
+             (:input :type "hidden" :name "id" :value (item-id content))
+             (:input :type "text" :class "title" :name "title" :value (item-title content))
+           (:input :type "text" :class "comment" :name "comment" :value (item-comment content))
+           (:input :type "submit" :class "update-btn" :onclick update-call)))))
+
 (defmethod theme.preview ((drawer handler) (content picture) chkbox)
   (with-accessors ((url pic-url) (thumbnail item-thumbnail)
                    (title item-title) (comment item-comment)
                    (id item-id)) content
     (with-html-output-to-string (str nil :prologue nil :indent t)
-      (:div :class "img" 
+      (:div :class "img" :id (format nil "img-~a" id)
             (:a :href url :rel "group" :class "fancybox-thumb" :title title
                 (:img :src thumbnail))
-            (:div :class "desc" (:b (str title))
-                  (:br) (str comment))
+            (:div :class "desc"
+                  (when *edit-items* 
+                    (htm (:div :class "edit-btn"
+                               :onclick (format nil "editItem(~a, event)" (item-id content))
+                               *edit-items*)))
+                  (:div :class "title" (str title))
+                  (:div :class "comment" (str comment)))
+            (when *edit-items*
+              (htm (:div :hidden t :id (format nil "edit-~a" (item-id content))
+                         :class "edit-box"
+                         (str (theme.update-item-form drawer content)))))
             (when chkbox
               (htm (:input :type "checkbox" :name chkbox :value id)))))))
 
@@ -103,11 +126,20 @@
       content
     (let ((url (restas:genurl 'gallery:view-album :id id)))
       (with-html-output-to-string (str nil :prologue nil :indent t)
-        (:div :class "img"
+        (:div :class "img album" :id (format nil "img-~a" id)
               (:a :href url :title title
                   (:img :src thumbnail))
-              (:div :class "desc" (:b (str title))
-                    (:br) (str comment))
+              (:div :class "desc"
+                    (when *edit-items* 
+                      (htm (:div :class "edit-btn"
+                                 :onclick (format nil "editItem(~a, event)" (item-id content))
+                                 *edit-items*)))
+                    (:div :class "title" (str title))
+                    (:div :class "comment" (str comment)))
+              (when *edit-items*
+                (htm (:div :hidden t :id (format nil "edit-~a" (item-id content))
+                           :class "edit-box"
+                           (str (theme.update-item-form drawer content)))))
               (when chkbox
                 (htm (:input :type "checkbox" :name chkbox :value id))))))))
 
