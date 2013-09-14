@@ -50,7 +50,6 @@
   (:url "upload")
   (:inherit-parent-context t)
   (upload:*store* *store*)
-  (upload:*multiple* t)
   (upload:*mime-type* nil)
   (upload:*file-stored-callback*
    (lambda (files)
@@ -71,22 +70,22 @@
   (let ((int (parse-integer str :junk-allowed t)))
     (if int int 0)))
 
-(defun upload-form ()
+(defun upload-form (multiple)
   (restas:assert-native-module)
   (restas:in-submodule 'upl
-    (upload:form)))
+    (upload:form :multiple multiple)))
 
 (restas:define-route add-pic ("add")
   (let ((father (hunchentoot:get-parameter "father"))
         (father-name (hunchentoot:get-parameter "father-name")))
-    (add-pic-render (upload-form)
+    (add-pic-render (upload-form t)
                     father
                     father-name)))
 
 (restas:define-route add-album ("new-album")
   (let ((father (hunchentoot:get-parameter "father"))
         (father-name (hunchentoot:get-parameter "father-name")))
-    (add-album-render (upload-form) father father-name )))
+    (add-album-render (upload-form nil) father father-name )))
 
 ;; Parse a list, transmitted through the url get-parameter,
 ;; named param-name
