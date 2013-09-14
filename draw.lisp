@@ -106,13 +106,13 @@
             (:a :href url :rel "group" :class "fancybox-thumb" :title title
                 (:img :src thumbnail))
             (:div :class "desc"
-                  (when *edit-items* 
+                  (when (and *edit-items* (not chkbox))
                     (htm (:div :class "edit-btn"
                                :onclick (format nil "editItem(~a, event)" (item-id content))
                                *edit-items*)))
                   (:div :class "title" (str title))
                   (:div :class "comment" (str comment)))
-            (when *edit-items*
+            (when (and *edit-items* (not chkbox))
               (htm (:div :hidden t :id (format nil "edit-~a" (item-id content))
                          :class "edit-box"
                          (str (theme.update-item-form drawer content)))))
@@ -130,13 +130,13 @@
               (:a :href url :title title
                   (:img :src thumbnail))
               (:div :class "desc"
-                    (when *edit-items* 
+                    (when (and *edit-items* (not chkbox))
                       (htm (:div :class "edit-btn"
                                  :onclick (format nil "editItem(~a, event)" (item-id content))
                                  *edit-items*)))
                     (:div :class "title" (str title))
                     (:div :class "comment" (str comment)))
-              (when *edit-items*
+              (when (and *edit-items* (not chkbox))
                 (htm (:div :hidden t :id (format nil "edit-~a" (item-id content))
                            :class "edit-box"
                            (str (theme.update-item-form drawer content)))))
