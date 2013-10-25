@@ -24,10 +24,12 @@ div.desc
   }
 .img .edit-btn
 {
-    width:10px;
-    height:10px;
+    width:20px;
+    height:20px;
     position:absolute;
-    background:white;
+    background:url("/gal/static/icons/paintbrush.gif");
+    background-repeat:no-repeat;
+    background-size:15px 20px;
 }
 .img .desc .title
 {
@@ -48,3 +50,18 @@ div.desc
     width:100%;
 }
 
+.update-btn {
+    color: #fff;
+    font-size: 0;
+    width: 19px;
+    height: 16px;
+    border: none;
+    margin: 0;
+    padding: 0;
+    background: url("/gal/static/icons/tick.gif");
+    background-repeat: no-repeat;
+    background-size: 16px 19px;
+}
+.edit-box{
+    text-align:center;
+}
