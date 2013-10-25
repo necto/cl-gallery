@@ -2,7 +2,6 @@
     (:use #:cl #:cl-who #:files-locator)
   (:export #:*file-stored-callback*
            #:*store*
-           #:*multiple*
            #:*mime-type*
 
            #:form
@@ -18,8 +17,6 @@
    And the filter for files in file-open dialog.
    Should look like 'image', or 'text' -- one of common media types.
    If it is not present, no file accepted.")
-(defvar *multiple* nil
-  "Whether or not allow user upload multiple files at a time")
 (defvar *store* (make-instance 'files-store :upload-dir "/tmp/" :download-dir "fl/")
   "The location, where the uploaded files will be stored, and where it can be downloaded")
 (defvar *file-stored-callback*
@@ -33,8 +30,9 @@
    Depending on *multiple* the fnames will be the string, or the list of
    strings, corresponding to the list of accepted files.")
 
-(defun form ()
+(defun form (&key (multiple nil))
   "The part responsible for the open-and-upload file dialog.
+  multiple: whether or not allow multiple files upload.
   CAUTION: the functin must be called from the context of your upload submodule!"
   (restas:assert-native-module)
   (let ((accept (when *mime-type* (format nil "~a/*" *mime-type*))))
@@ -47,7 +45,7 @@
                         (:input :id "file-upload-input" :type "file"
                                 :onChange "document.getElementById(\"file-upload\").submit();"
                                 :name "file" :accept accept
-                              :multiple *multiple*))
+                              :multiple multiple))
                  (:iframe :id "upload_target_iframe" :name "upload_target_iframe"
                           :src (restas:genurl* 'upload-empty-url)
                           :style "width:0;height:0;border:0px solid #fff;"))))))
@@ -77,15 +75,13 @@
   (with-html-output-to-string (sss)
     (:script :language "javascript" :type "text/javascript"
        (str (funcall *file-stored-callback*
-                     (if *multiple*
-                         (mapcar #'(lambda (param)
-                                     (handle-file-param (cdr param)))
-                                 (remove-if (complement #'valid-type)
-                                            (remove "file" (hunchentoot:post-parameters*)
-                                                    :test (complement #'equal)
-                                                    :key #'car)
-                                            :key #'cdr))
-                         (handle-file-param (valid-type (hunchentoot:post-parameter "file")))))))))
+                     (mapcar #'(lambda (param)
+                                 (handle-file-param (cdr param)))
+                             (remove-if (complement #'valid-type)
+                                        (remove "file" (hunchentoot:post-parameters*)
+                                                :test (complement #'equal)
+                                                :key #'car)
+                                        :key #'cdr)))))))
 
 (restas:define-route upload-empty-url ("upload-empty-url")
   (with-html-output-to-string (sss)

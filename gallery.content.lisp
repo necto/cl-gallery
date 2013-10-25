@@ -34,10 +34,10 @@
     "The url to the small preview picture")
    (title
     :initarg :title
-    :reader item-title)
+    :accessor item-title)
    (comment
     :initarg :comment
-    :reader item-comment
+    :accessor item-comment
     :documentation
     "The commentary to the content."))
   (:documentation
