@@ -1,5 +1,5 @@
 (defpackage #:gallery.mongo-db-pics-collection
-  (:use #:cl #:gallery.content #:son-sugar #:iterate
+  (:use #:cl #:gallery.content #:mongo.sugar #:iterate
         #:gallery.policy.pics-collection)
   (:export #:handler
            #:make))
@@ -16,28 +16,48 @@
 (defun make (&rest dbspec)
   (make-instance 'handler :dbspec dbspec))
 
+;; TODO: discover a way to save the number of connections in nesteed queries
+
+#+nil
 (defun open-db (db)
   (incf (db-open-counter db))
   (if (actual-db db)
       (actual-db db)
       (setf (actual-db db) (apply 'make-instance 'mongo:database (dbspec db)))))
-
+#+nil
 (defun close-db (db)
   (when (> (db-open-counter db) 0)
     (decf (db-open-counter db))
     (when (<= (db-open-counter db) 0)
       (mongo:close-database (actual-db db))
       (setf (actual-db db) nil))))
-
+#+nil
 (defmacro with-open-db ((db-name db) &body body)
   `(let ((,db-name (open-db ,db)))
      (unwind-protect
           (progn ,@body)
        (close-db ,db))))
 
+(defmacro with-open-db ((db-name db) &body body)
+  (let ((client-name (gensym))
+        (dbspec-name (gensym)))
+    `(let ((,dbspec-name (dbspec ,db)))
+       (mongo:with-client 
+           (,client-name (mongo:create-mongo-client 
+                          :usocket
+                          :server (make-instance 'mongo:server-config
+                                                 :hostname 
+                                                 (getf ,dbspec-name :hostname)
+                                                 :port
+                                                 (getf ,dbspec-name :port))))
+         (let ((,db-name (make-instance 'mongo:database
+                                        :mongo-client ,client-name
+                                        :name (getf ,dbspec-name :name))))
+           ,@body)))))
+            
 (defmacro with-a-collection ((coll name db) &body body)
   (let ((base-name (gensym)))
-    `(with-open-db (,base-name db)
+    `(with-open-db (,base-name ,db)
        (let ((,coll (mongo:collection ,base-name ,name)))
          ,@body))))
 
@@ -116,7 +136,7 @@
   (with-pics-collection (pics db)
     (item-from-ht
      (mongo:find-one pics
-                     (son "_id" id)) db)))
+                     :query (son "_id" id)) db)))
 
 (defmethod p-coll.save-pictures ((db handler) pics father-id)
   (let ((father (p-coll.get-item db father-id)))
@@ -144,13 +164,13 @@
 
 (defmethod p-coll.gen-uniq-id ((db handler))
   (with-misc-collection (misc db)
-    (let ((id (mongo:find-one misc (son "_id" "nextid"))))
+    (let ((id (mongo:find-one misc :query (son "_id" "nextid"))))
       (mongo:update-op misc (son "_id" "nextid") (son "seq" (incf (gethash "seq" id))))
       (gethash "seq" id))))
 
 (defmethod p-coll.root-album-id ((db handler))
   (let ((root-id (with-misc-collection (misc db)
-                   (mongo:find-one misc (son "_id" "rootid")))))
+                   (mongo:find-one misc :query (son "_id" "rootid")))))
     (if root-id
         (gethash "val" root-id)
         (init-db db))))

@@ -41,8 +41,9 @@
     (incf counter)))
 
 (defmethod p-coll.root-album-id ((mem handler))
-  (if (null (items mem))
-      (item-id (push (make-root-album "Hi, bro..." "I'm here the root")
-                     (items mem)))
-      (item-id (first (items mem)))))
+  (item-id 
+   (first (if (null (items mem))
+              (push (make-root-album "Hi, bro..." "I'm here the root")
+                    (items mem))
+              (items mem)))))
   

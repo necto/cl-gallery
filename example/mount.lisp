@@ -15,7 +15,7 @@
   (:url "gal")
   (gallery.internal.render:*render* (make-instance 'gallery.default-render:handler))
   (gallery.internal.pics-collection:*pics-collection*
-   ;(gallery.pics-memory-collection:make)))
-   (gallery.mongo-db-pics-collection:make :name "gal")))
+   (gallery.pics-memory-collection:make)))
+   ;(gallery.mongo-db-pics-collection:make :name "gal")))
 
 (restas:start '#:gallery.example :port 8082)
