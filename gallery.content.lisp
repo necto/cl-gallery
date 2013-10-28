@@ -10,7 +10,7 @@
 
            #:item
            #:item-id
-           #:item-owner
+           #:item-owner-id
            #:item-thumbnail
            #:item-title
            #:item-comment
@@ -94,9 +94,9 @@
     :reader item-id
     :documentation
     "An unique identificator for the item")
-   (owner
-    :initarg :owner
-    :reader item-owner
+   (owner-id
+    :initarg :owner-id
+    :reader item-owner-id
     :documentation
     "An id of the container, owning the given item")
    (thumbnail
@@ -157,10 +157,10 @@
                         :wait t)
     small-fname))
 
-(defun make-picture (store owner file title comment date)
+(defun make-picture (store owner-id file title comment date)
   (make-instance 'picture
                  :id (gen-uniq-id-pic-coll)
-                 :owner owner
+                 :owner-id owner-id
                  :url (file-url store file)
                  :thumbnail (file-url store (make-thumb store file))
                  :title title
@@ -170,10 +170,10 @@
 (defun make-album-name (title)
   (transliterate (string-downcase (string-trim " " title))))
 
-(defun make-album (store owner file title comment period)
+(defun make-album (store owner-id file title comment period)
   (make-instance 'album
                  :id (gen-uniq-id-pic-coll)
-                 :owner owner
+                 :owner-id owner-id
                  :name (make-album-name title)
                  :title title
                  :comment comment
@@ -183,14 +183,14 @@
 (defun make-root-album (title comment)
   (make-instance 'album
                  :id (gen-uniq-id-pic-coll)
-                 :owner nil
+                 :owner-id nil
                  :name (make-album-name title)
                  :title title
                  :comment comment
                  :thumbnail nil
                  :time (make-instance 'period)))
 
-;; TODO: if any time of items is ajacent to the album period border,
+;; TODO: if a time of any item is ajacent to the album period border,
 ;; recalculate album perioid
 (defun album-delete-items (album ids)
   (setf (album-items album)
@@ -212,11 +212,8 @@
   (setf (slot-value album 'time)
         (make-embracing-period (list (slot-value album 'time) period))))
 
-(defun adjust-album-period (item-retreiver album period)
+(defun adjust-album-period (item-updater album period)
   (unless (period-contains-p (item-time album) period)
     (adjust-direct-album-period album period)
-    (when (item-owner album)
-      (adjust-album-period item-retreiver
-                           (funcall item-retreiver (item-owner album))
-                           (item-time album)))))
+    (funcall item-updater album)))
 

@@ -104,9 +104,9 @@
 
 ;; Make a list of pictures using the same title and comment from
 ;; a list of just raw files.
-(defun make-pictures (files owner titles comments dates)
+(defun make-pictures (files owner-id titles comments dates)
   (mapcar #'(lambda (file title comment date)
-              (make-picture *store* owner file title comment date))
+              (make-picture *store* owner-id file title comment date))
           files titles comments dates))
 
 (restas:define-route receive-pic ("accept-pic")

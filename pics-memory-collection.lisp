@@ -25,7 +25,7 @@
         (period (make-embracing-period pics)))
     (when father
       (setf (album-items father) (append pics (album-items father)))
-      (adjust-album-period #'(lambda (id) (p-coll.get-item mem id))
+      (adjust-album-period #'(lambda (it) (p-coll.update-item mem it))
                            father period)
       (setf (items mem) (nconc pics (items mem))))))
 
@@ -34,14 +34,15 @@
   (let ((father (p-coll.get-item mem father-id)))
     (when father
       (push album (album-items father))
-      (adjust-album-period #'(lambda (id) (p-coll.get-item mem id))
+      (adjust-album-period #'(lambda (it) (p-coll.update-item mem it))
                            father (item-time album))
       (push album (items mem)))))
 
 
 (defmethod p-coll.update-item ((mem handler) (item item))
-  (when (item-owner item)
-    (adjust-album-period mem (p-coll.get-item mem (item-owner item))
+  (when (item-owner-id item)
+    (adjust-album-period #'(lambda (it) (p-coll.update-item mem it))
+                         (p-coll.get-item mem (item-owner-id item))
                          (item-time item)))
   ;Nothing to do, the item is in memory, so it is allways up to date
   )

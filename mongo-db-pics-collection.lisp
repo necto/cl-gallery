@@ -82,12 +82,25 @@
   (:documentation "Write all neccesary data to a hash table,
    for further recreation a copy of the item"))
 
+(defmethod write-item-to-hash-table ((time local-time:timestamp))
+  (let ((table (make-hash-table :test 'equal)))
+    (setf (gethash "val" table) time)
+    table))
+
+(defmethod write-item-to-hash-table ((time period))
+  (let ((table (make-hash-table :test 'equal)))
+    (setf (gethash "begin" table) (period-begin time))
+    (setf (gethash "end" table) (period-end time))
+    table))
+
 (defmethod write-item-to-hash-table ((item item))
   (let ((table (make-hash-table :test 'equal)))
     (setf (gethash "_id" table) (item-id item))
+    (setf (gethash "ownerid" table) (item-owner-id item))
     (setf (gethash "thumbnail" table) (item-thumbnail item))
     (setf (gethash "title" table) (item-title item))
     (setf (gethash "comment" table) (item-comment item))
+    (setf (gethash "time" table) (write-item-to-hash-table (item-time item)))
     table))
 
 (defmethod write-item-to-hash-table ((item picture))
@@ -102,21 +115,33 @@
     table))
           
 
+(defmethod read-item-from-hash-table ((type (eql :timestamp)) ht db)
+  (gethash "val" ht))
+
+(defmethod read-item-from-hash-table ((type (eql :period)) ht db)
+  (make-embracing-period (list (gethash "begin" ht) (gethash "end" ht))))
+
 (defmethod read-item-from-hash-table ((type (eql :picture)) ht db)
   (make-instance 'picture
                  :id (gethash "_id" ht)
+                 :owner-id (gethash "ownerid" ht)
                  :url (gethash "url" ht)
                  :thumbnail (gethash "thumbnail" ht)
                  :title (gethash "title" ht)
+                 :time (read-item-from-hash-table
+                        :timestamp (gethash "time" ht) db)
                  :comment (gethash "comment" ht)))
 
 (defmethod read-item-from-hash-table ((type (eql :album)) ht db)
   (make-instance 'album
                  :id (gethash "_id" ht)
+                 :owner-id (gethash "ownerid" ht)
                  :name (gethash "name" ht)
                  :title (gethash "title" ht)
                  :comment (gethash "comment" ht)
                  :thumbnail (gethash "thumbnail" ht)
+                 :time (read-item-from-hash-table
+                        :period (gethash "time" ht) db)
                  :items (mapcar #'(lambda (id)
                                     (p-coll.get-item db id))
                                 (gethash "items" ht))))
@@ -135,17 +160,19 @@
 (defmethod p-coll.get-item ((db handler) (id number))
   (with-pics-collection (pics db)
     (item-from-ht
-     (mongo:find-one pics
-                     :query (son "_id" id)) db)))
+     (mongo:find-one pics :query (son "_id" id)) db)))
 
 (defmethod p-coll.save-pictures ((db handler) pics father-id)
-  (let ((father (p-coll.get-item db father-id)))
+  (let ((father (p-coll.get-item db father-id))
+        (period (make-embracing-period pics)))
     (when father
       (setf (album-items father) (append pics (album-items father)))
       (with-pics-collection (items db)
         (iter (for pic in pics)
               (mongo:insert-op items (item-to-ht pic)))
         (mongo:update-op items (son "_id" (item-id father)) (item-to-ht father)))
+      (adjust-album-period #'(lambda (it) (p-coll.update-item db it))
+                           father period)
       t)))
 
 (defmethod p-coll.save-album ((db handler) album father-id)
@@ -155,12 +182,18 @@
       (with-pics-collection (pics db)
         (mongo:insert-op pics  (item-to-ht album))
         (mongo:update-op pics (son "_id" (item-id father)) (item-to-ht father)))
+      (adjust-album-period #'(lambda (it) (p-coll.update-item db it))
+                           father (item-time album))
       t)))
 
 ;; Todo: check for deleted pictures from the album, and delete them?
 (defmethod p-coll.update-item ((db handler) item)
   (with-pics-collection (pics db)
-    (mongo:update-op pics (son "_id" (item-id item)) (item-to-ht item))))
+    (mongo:update-op pics (son "_id" (item-id item)) (item-to-ht item)))
+  (when (item-owner-id item)
+    (adjust-album-period #'(lambda (it) (p-coll.update-item db it))
+                       (p-coll.get-item db (item-owner-id item))
+                       (item-time item))))
 
 (defmethod p-coll.gen-uniq-id ((db handler))
   (with-misc-collection (misc db)
