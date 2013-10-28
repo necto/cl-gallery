@@ -21,6 +21,7 @@
                   (:form :method "get" :action (restas:genurl 'receive-pic)
                          (:input :type "hidden" :id "title" :name "title" :value "")
                          (:input :type "hidden" :id "comment" :name "comment" :value "")
+                         (:input :type "hidden" :id "time" :name "time" :value "")
                          "Father:" (str father-name)
                          (:input :type "hidden" :name "father" :value father :readonly t)
                          (:input :type "hidden" :name "pic" :value "no-value" :id "pic")

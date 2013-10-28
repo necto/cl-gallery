@@ -53,19 +53,21 @@
   (upload:*store* *store*)
   (upload:*mime-type* nil)
   (upload:*file-stored-callback*
-   (lambda (files)
-     (when *current-files*
-       (mapcar #'(lambda (file)
-                   (delete-file (file-path *store* file)))
-               *current-files*))
-     (setf *current-files* files)
-     (let ((*print-pretty* nil))
-       (format nil "parent.done([~{\"~a\"~^, ~}], ~
-                                \'(~{\"~a\"~^ ~})\');"
-               (mapcar #'(lambda (file)
-                           (file-url *store* file))
-                       files)
-               files)))))
+   #'files-stored-callback))
+
+(defun files-stored-callback (files)
+  (when *current-files*
+    (mapcar #'(lambda (file)
+                (delete-file (file-path *store* file)))
+            *current-files*))
+  (setf *current-files* files)
+  (let ((*print-pretty* nil))
+    (format nil "parent.done([~:{{url: \"~a\",~
+                                  file: \"~a\",~
+                                  date: \"~a\"}~^, ~}]);"
+            (mapcar #'(lambda (file)
+                        (list (file-url *store* file) file (local-time:now)))
+                    files))))
 
 (defun safe-parse-integer (str)
   (let ((int (parse-integer str :junk-allowed t)))
@@ -102,17 +104,21 @@
 
 ;; Make a list of pictures using the same title and comment from
 ;; a list of just raw files.
-(defun make-pictures (files titles comments)
-  (mapcar #'(lambda (file title comment)
-              (make-picture *store* file title comment))
-          files titles comments))
+(defun make-pictures (files owner titles comments dates)
+  (mapcar #'(lambda (file title comment date)
+              (make-picture *store* owner file title comment date))
+          files titles comments dates))
 
 (restas:define-route receive-pic ("accept-pic")
   (let ((files (get-uploaded-pictures "pic"))
         (titles (get-list-param "title"))
         (comments (get-list-param "comment"))
+        (dates (mapcar #'local-time:parse-timestring
+                       (get-list-param "time")))
         (father-id (safe-parse-integer (hunchentoot:get-parameter "father"))))
-    (if (save-pictures-pic-coll (make-pictures files titles comments) father-id)
+    (if (save-pictures-pic-coll (make-pictures files father-id
+                                               titles comments dates)
+                                father-id)
         (restas:redirect 'view-album :id father-id)
         (no-such-album-render father-id))))
 
@@ -121,8 +127,11 @@
         (titles (get-list-param "title"))
         (comments (get-list-param "comment"))
         (father-id (safe-parse-integer (hunchentoot:get-parameter "father"))))
-    (if (save-album-pic-coll (make-album *store* (first files)
-                                         (first titles) (first comments)) father-id)
+    (if (save-album-pic-coll 
+         (make-album *store* father-id (first files)
+                     (first titles) (first comments)
+                     (item-time (get-item-pic-coll father-id)))
+         father-id)
         (restas:redirect 'view-album :id father-id)
         (no-such-album-render father-id))))
           

@@ -1,6 +1,6 @@
 
 (defsystem gallery
-    :depends-on (#:restas #:cl-who #:restas-directory-publisher)
+    :depends-on (#:restas #:cl-who #:restas-directory-publisher #:local-time)
     :components ((:file "draw" :depends-on ("gallery" "gallery.content"))
                  (:file "gallery.policies")
                  (:file "gallery" :depends-on ("upload" "gallery.policies" "files-locator" "gallery.content"))
