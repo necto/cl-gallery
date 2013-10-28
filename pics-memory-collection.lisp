@@ -20,19 +20,13 @@
 (defmethod p-coll.get-item ((mem handler) id)
   (find id (items mem) :key #'item-id :test #'=))
 
-(defun adjust-album-period (mem album period)
-  (unless (period-contains-p (item-time album) period)
-    (adjust-direct-album-period album period)
-    (when (item-owner album)
-      (adjust-album-period mem (p-coll.get-item mem (item-owner album))
-                           (item-time album)))))
-
 (defmethod p-coll.save-pictures ((mem handler) pics father-id)
   (let ((father (p-coll.get-item mem father-id))
         (period (make-embracing-period pics)))
     (when father
       (setf (album-items father) (append pics (album-items father)))
-      (adjust-album-period mem father period)
+      (adjust-album-period #'(lambda (id) (p-coll.get-item mem id))
+                           father period)
       (setf (items mem) (nconc pics (items mem))))))
 
 
@@ -40,7 +34,8 @@
   (let ((father (p-coll.get-item mem father-id)))
     (when father
       (push album (album-items father))
-      (adjust-album-period mem father (item-time album))
+      (adjust-album-period #'(lambda (id) (p-coll.get-item mem id))
+                           father (item-time album))
       (push album (items mem)))))
 
 

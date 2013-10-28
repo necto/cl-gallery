@@ -5,7 +5,7 @@
            #:period-begin
            #:period-end
            #:period-contains-p
-           #:adjust-direct-album-period
+           #:adjust-album-period
            #:make-embracing-period
 
            #:item
@@ -211,3 +211,12 @@
 (defun adjust-direct-album-period (album period)
   (setf (slot-value album 'time)
         (make-embracing-period (list (slot-value album 'time) period))))
+
+(defun adjust-album-period (item-retreiver album period)
+  (unless (period-contains-p (item-time album) period)
+    (adjust-direct-album-period album period)
+    (when (item-owner album)
+      (adjust-album-period item-retreiver
+                           (funcall item-retreiver (item-owner album))
+                           (item-time album)))))
+

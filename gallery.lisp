@@ -47,14 +47,6 @@
   (restas:with-context context
     (setf (download-dir *store*) (restas:genurl 'files.route :path ""))))
 
-(restas:mount-module upl (#:upload)
-  (:url "upload")
-  (:inherit-parent-context t)
-  (upload:*store* *store*)
-  (upload:*mime-type* nil)
-  (upload:*file-stored-callback*
-   #'files-stored-callback))
-
 (defun files-stored-callback (files)
   (when *current-files*
     (mapcar #'(lambda (file)
@@ -62,12 +54,20 @@
             *current-files*))
   (setf *current-files* files)
   (let ((*print-pretty* nil))
-    (format nil "parent.done([~:{{url: \"~a\",~
+    (format nil "parent.done([~:{\{url: \"~a\",~
                                   file: \"~a\",~
-                                  date: \"~a\"}~^, ~}]);"
+                                  date: \"~a\"}~:^, ~}]);"
             (mapcar #'(lambda (file)
                         (list (file-url *store* file) file (local-time:now)))
                     files))))
+
+(restas:mount-module upl (#:upload)
+  (:url "upload")
+  (:inherit-parent-context t)
+  (upload:*store* *store*)
+  (upload:*mime-type* nil)
+  (upload:*file-stored-callback*
+   #'files-stored-callback))
 
 (defun safe-parse-integer (str)
   (let ((int (parse-integer str :junk-allowed t)))
