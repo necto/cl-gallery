@@ -13,6 +13,7 @@
            #:choose-pic
            #:delete-pic
            #:update-item
+           #:draw-preview
            
            #:albums-grid
            #:album-pics-grid
