@@ -8,7 +8,7 @@
     "Draw a page with form for a picture addendum")
   (define-method add-album (form father father-name)
     "Draw a page for new album form")
-  (define-method view-album (add-pic-url add-alb-url rem-pic-url album)
+  (define-method view-album (add-pic-url add-alb-url rem-pic-url branch album)
     "Draw all pictures in the album")
   (define-method choose-album (action albums)
     "Show the table with checkboxes for user to choose some albums")

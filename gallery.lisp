@@ -109,6 +109,14 @@
               (make-picture *store* owner-id file title comment date))
           files titles comments dates))
 
+(defun trace-to-root (item)
+  (if (item-owner-id item)
+      (let ((owner (get-item-pic-coll (item-owner-id item))))
+        (cons (list :url (restas:genurl 'view-album :id (item-id owner))
+                    :title (item-title owner))
+              (trace-to-root owner)))
+      nil))
+
 (restas:define-route receive-pic ("accept-pic")
   (let ((files (get-uploaded-pictures "pic"))
         (titles (get-list-param "title"))
@@ -148,6 +156,7 @@
                                           :father-name (album-name album))
                            (restas:genurl 'choose-pic :id id
                                           :action (restas:genurl 'delete-pic :id id))
+                           (trace-to-root album)
                            album)
         (no-such-album-render id))))
 

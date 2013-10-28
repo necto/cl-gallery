@@ -22,7 +22,7 @@
                          (:input :type "hidden" :id "title" :name "title" :value "")
                          (:input :type "hidden" :id "comment" :name "comment" :value "")
                          (:input :type "hidden" :id "time" :name "time" :value "")
-                         "Father:" (str father-name)
+                         "Father:" (str (escape-string father-name))
                          (:input :type "hidden" :name "father" :value father :readonly t)
                          (:input :type "hidden" :name "pic" :value "no-value" :id "pic")
                          (:input :type "submit" :value "like it!"))
@@ -36,7 +36,7 @@
                   (:form :method "get" :action (restas:genurl 'receive-album)
                          (:input :type "hidden" :id "title" :name "title" :value "")
                          (:input :type "hidden" :id "comment" :name "comment" :value "")
-                         "Father:" (str father-name)
+                         "Father:" (str (escape-string father-name))
                          (:input :type "hidden" :name "father" :value father :readonly t)
                          (:input :type "hidden" :name "pic" :value "no-value" :id "pic")
                          (:input :type "submit" :value "That is right!"))
@@ -60,12 +60,15 @@
                           :href (gen-static-url "css/gallery.css")))
             (:body (:script :language "javascript" :type "text/javascript"
                             :src (gen-static-url "js/run-gallery.js"))
-                   (:h1 (str (item-title ,album)))
-                   (:p (str (item-comment ,album)))
+                   (:h1 (str (escape-string (item-title ,album))))
+                   (:p (str (escape-string (item-comment ,album))))
                    ,@body))))
 
-(defmethod theme.view-album ((drawer handler) add-pic-url add-alb-url rem-pic-url album)
+(defmethod theme.view-album ((drawer handler) add-pic-url add-alb-url rem-pic-url branch album)
   (in-album-page stream album
+    (loop for parent in (reverse branch) do
+         (htm (:a :href (getf parent :url) (str (escape-string (getf parent :title))))))
+    (:br)
     (:center (:a :href add-pic-url
                  "add a picture")
              (:a :href add-alb-url
@@ -94,8 +97,8 @@
       (:form :action (format nil "javascript:~a" update-call)
              :method "get" :id (format nil "update-form-~a" (item-id content))
              (:input :type "hidden" :name "id" :value (item-id content))
-             (:input :type "text" :class "title" :name "title" :value (item-title content))
-           (:input :type "text" :class "comment" :name "comment" :value (item-comment content))
+             (:input :type "text" :class "title" :name "title" :value (escape-string (item-title content)))
+           (:input :type "text" :class "comment" :name "comment" :value (escape-string (item-comment content)))
            (:input :type "submit" :class "update-btn" :onclick update-call)))))
 
 (defmethod theme.preview ((drawer handler) (content picture) chkbox)
@@ -111,8 +114,8 @@
                     (htm (:div :class "edit-btn"
                                :onclick (format nil "editItem(~a, event)" (item-id content))
                                *edit-items*)))
-                  (:div :class "title" (str title))
-                  (:div :class "comment" (str comment)))
+                  (:div :class "title" (str (escape-string title)))
+                  (:div :class "comment" (str (escape-string comment))))
             (when (and *edit-items* (not chkbox))
               (htm (:div :hidden t :id (format nil "edit-~a" (item-id content))
                          :class "edit-box"
@@ -135,8 +138,8 @@
                       (htm (:div :class "edit-btn"
                                  :onclick (format nil "editItem(~a, event)" (item-id content))
                                  *edit-items*)))
-                    (:div :class "title" (str title))
-                    (:div :class "comment" (str comment)))
+                    (:div :class "title" (str (escape-string title)))
+                    (:div :class "comment" (str (escape-string comment))))
               (when (and *edit-items* (not chkbox))
                 (htm (:div :hidden t :id (format nil "edit-~a" (item-id content))
                            :class "edit-box"
