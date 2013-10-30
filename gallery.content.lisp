@@ -20,6 +20,8 @@
            #:make-picture
            #:pic-url
            
+           #:get-exif-time
+           
            #:album
            #:make-album
            #:make-root-album
@@ -156,6 +158,20 @@
                               (file-pathname store small-fname))
                         :wait t)
     small-fname))
+
+(defun get-exif-time (file &optional (default (local-time:now)))
+  (let ((exif-str (with-output-to-string (out)
+                    (sb-ext:run-program "/usr/bin/exiftool"
+                                        (list "-CreateDate"
+                                              file)
+                                        :output out))))
+    (if (or (string= "" exif-str)
+            (< (length exif-str) 53))
+        default
+        (local-time:parse-timestring
+         exif-str
+         :date-time-separator #\Space :allow-missing-elements t
+         :date-separator #\: :start 34 :end 53))))
 
 (defun make-picture (store owner-id file title comment date)
   (make-instance 'picture

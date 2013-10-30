@@ -59,7 +59,8 @@
                                   file: \"~a\",~
                                   date: \"~a\"}~:^, ~}]);"
             (mapcar #'(lambda (file)
-                        (list (file-url *store* file) file (local-time:now)))
+                        (list (file-url *store* file) file
+                              (get-exif-time (file-pathname *store* file))))
                     files))))
 
 (restas:mount-module upl (#:upload)
