@@ -14,7 +14,7 @@
 (defclass files-store ()
   ((upload-dir
     :initarg :upload-dir
-    :reader upload-dir
+    :accessor upload-dir ;; <-- Should be reader ??
     :initform (error "cpecify the upload-dir field")
     :documentation
     "the directory (alogn with the trailing / -- it's important),
@@ -38,7 +38,7 @@
 
 (defmethod file-path ((store files-store) fname)
   (make-pathname :name fname
-                 :type nil
+                 :type :unspecific ;; <- nil value causes a crash
                  :directory (upload-dir store)))
 
 (defmethod file-pathname ((store files-store) fname)

@@ -21,7 +21,7 @@
            #:static.route
 
            #:*drawer*
-           #:*store*
+           #:*upload-directory*
 
            #:*extra-params*))
 
@@ -30,23 +30,30 @@
 (restas:mount-module files (#:restas.directory-publisher)
   (:inherit-parent-context t)
   (:url "files")
-  (restas.directory-publisher:*directory* #p"/tmp/")
+  ;restas.directory-publisher:*directory*  will be initialized in 
+  ; restas:initialize-module-instanace
   (restas.directory-publisher:*autoindex* t))
 
 (restas:mount-module static (#:restas.directory-publisher)
-  (:inherit-parent-context t)
   (:url "static")
   (restas.directory-publisher:*directory*
    (asdf:system-relative-pathname '#:gallery #p"static/")))
 
 (defparameter *extra-params* nil)
 (defparameter *current-files* nil)
+(defparameter *upload-directory* "/tmp/")
 
+;; Mustn't be redefined, because it is binded also to upload:*store*
 (defvar *store* (make-instance 'files-store :upload-dir "/tmp/" :download-dir "wrong"))
 
 (defmethod restas:initialize-module-instance :after ((module (eql #.*package*)) context)
   (restas:with-context context
-    (setf (download-dir *store*) (restas:genurl 'files.route :path ""))))
+    (setf (upload-dir *store*) *upload-directory*)
+    ;the VV parameter VV will be transmitted to the 'files submodule
+    (setf restas.directory-publisher:*directory* (upload-dir *store*))
+    (setf (download-dir *store*) (restas:genurl 'files.route :path ""))
+    (restas:in-submodule 'upl
+      (upload:update-store *store*))))
 
 (defun files-stored-callback (files)
   (when *current-files*
@@ -66,7 +73,6 @@
 (restas:mount-module upl (#:upload)
   (:url "upload")
   (:inherit-parent-context t)
-  (upload:*store* *store*)
   (upload:*mime-type* nil)
   (upload:*file-stored-callback*
    #'files-stored-callback))

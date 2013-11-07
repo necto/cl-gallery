@@ -1,9 +1,10 @@
 (restas:define-module #:upload
     (:use #:cl #:cl-who #:files-locator)
   (:export #:*file-stored-callback*
-           #:*store*
+;           #:*store*
            #:*mime-type*
 
+           #:update-store
            #:form
 
            #:upload-empty-url
@@ -50,6 +51,19 @@
                           :src (restas:genurl* 'upload-empty-url)
                           :style "width:0;height:0;border:0px solid #fff;"))))))
 
+(defun update-store (new-store)
+  "Critical function, must be called to force upload module use
+   neccesary directories. Must be called after the upload being 
+   mounted, and from it's own context (see restas:in-submodule)."
+  (restas:assert-native-module)
+  (setq *store* new-store)
+  (let ((path (ensure-directories-exist
+               (merge-pathnames "tmp/" (upload-dir *store*)))))
+    ;Update the directory files being uploaded to, in order to
+    ; make sure, that rename-file will be able to work on them
+    ; (i. e. they will be on the same FS)
+    (setq hunchentoot:*tmp-directory* (directory-namestring path))))
+
 (restas:define-route upload-form-main ("form")
   (with-html-output-to-string (sss)
     (htm (:html (:head) (:body (str (form)))))))
@@ -63,7 +77,7 @@
     (let ((fname (generate-uniq-fname file-name)))
       (let ((new-path (file-path *store* fname)))
         (rename-file path (ensure-directories-exist new-path)))
-    fname)))
+      fname)))
 
 (defun valid-type (param)
   (destructuring-bind (path file-name content-type) param
