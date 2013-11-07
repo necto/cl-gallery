@@ -104,7 +104,7 @@
 (defmethod theme.preview ((drawer handler) (content picture) chkbox)
   (with-accessors ((url pic-url) (thumbnail item-thumbnail)
                    (title item-title) (comment item-comment)
-                   (id item-id)) content
+                   (time item-time) (id item-id)) content
     (with-html-output-to-string (str nil :prologue nil :indent t)
       (:div :class "img" :id (format nil "img-~a" id)
             (:a :href url :rel "group" :class "fancybox-thumb" :title title
@@ -115,7 +115,8 @@
                                :onclick (format nil "editItem(~a, event)" (item-id content))
                                *edit-items*)))
                   (:div :class "title" (str (escape-string title)))
-                  (:div :class "comment" (str (escape-string comment))))
+                  (:div :class "comment" (str (escape-string comment)))
+                  (:div :class "date" (str (draw-time-render time))))
             (when (and *edit-items* (not chkbox))
               (htm (:div :hidden t :id (format nil "edit-~a" (item-id content))
                          :class "edit-box"
@@ -126,7 +127,7 @@
 (defmethod theme.preview ((drawer handler) (content album) chkbox)
   (with-accessors ((name album-name) (thumbnail item-thumbnail)
                    (title item-title) (comment item-comment)
-                   (items album-items) (id item-id))
+                   (items album-items) (time item-time) (id item-id))
       content
     (let ((url (restas:genurl 'gallery:view-album :id id)))
       (with-html-output-to-string (str nil :prologue nil :indent t)
@@ -139,13 +140,20 @@
                                  :onclick (format nil "editItem(~a, event)" (item-id content))
                                  *edit-items*)))
                     (:div :class "title" (str (escape-string title)))
-                    (:div :class "comment" (str (escape-string comment))))
+                    (:div :class "comment" (str (escape-string comment)))
+                    (:div :class "period" (str (draw-time-render time))))
               (when (and *edit-items* (not chkbox))
                 (htm (:div :hidden t :id (format nil "edit-~a" (item-id content))
                            :class "edit-box"
                            (str (theme.update-item-form drawer content)))))
               (when chkbox
                 (htm (:input :type "checkbox" :name chkbox :value id))))))))
+
+(defmethod theme.draw-time ((drawer handler) (time local-time:timestamp))
+  (escape-string (format nil "~a" time)))
+
+(defmethod theme.draw-time ((drawer handler) (time period))
+  (escape-string (format nil "~a - ~a" (period-begin time) (period-end time))))
 
 (defmethod theme.no-such-album ((drawer handler) name)
   (format nil "<h2> There is no album with id ~a </h2>" name))
