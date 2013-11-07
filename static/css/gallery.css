@@ -27,9 +27,8 @@ div.desc
     width:20px;
     height:20px;
     position:absolute;
-    background:url("/gal/static/icons/paintbrush.gif");
+    background:url("icons/edit.png");
     background-repeat:no-repeat;
-    background-size:15px 20px;
 }
 .img .desc .title
 {
@@ -58,9 +57,8 @@ div.desc
     border: none;
     margin: 0;
     padding: 0;
-    background: url("/gal/static/icons/tick.gif");
+    background: url("icons/tick.png");
     background-repeat: no-repeat;
-    background-size: 16px 19px;
 }
 .edit-box{
     text-align:center;
