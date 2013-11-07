@@ -18,13 +18,13 @@
    And the filter for files in file-open dialog.
    Should look like 'image', or 'text' -- one of common media types.
    If it is not present, no file accepted.")
-(defvar *store* (make-instance 'files-store :upload-dir "/tmp/" :download-dir "fl/")
+(defvar *store* (make-instance 'files-store :upload-path #P"/tmp/" :download-dir "fl/")
   "The location, where the uploaded files will be stored, and where it can be downloaded")
 (defvar *file-stored-callback*
   #'(lambda (fname)
       (format nil "parent.alert(\"finished at: ~a\");" (file-url *store* fname)))
   "The function, being called after the file is received by the hunchentoot,
-   copyed into the *upload-dir* under a uniq name.
+   copyed into the hunchentoot:*upload-dir* under a uniq name.
    The argument is the name of the result file, with attached *download-dir*.
    The result will be inserted in the JS script body of the server response, 
    so, you can inform the parent page, that the uploading is complete.
@@ -58,7 +58,7 @@
   (restas:assert-native-module)
   (setq *store* new-store)
   (let ((path (ensure-directories-exist
-               (merge-pathnames "tmp/" (upload-dir *store*)))))
+               (merge-pathnames "tmp/" (upload-path *store*)))))
     ;Update the directory files being uploaded to, in order to
     ; make sure, that rename-file will be able to work on them
     ; (i. e. they will be on the same FS)

@@ -21,7 +21,7 @@
            #:static.route
 
            #:*drawer*
-           #:*upload-directory*
+           #:*upload-path*
 
            #:*extra-params*))
 
@@ -41,16 +41,16 @@
 
 (defparameter *extra-params* nil)
 (defparameter *current-files* nil)
-(defparameter *upload-directory* "/tmp/")
+(defparameter *upload-path* #P"/tmp/")
 
 ;; Mustn't be redefined, because it is binded also to upload:*store*
-(defvar *store* (make-instance 'files-store :upload-dir "/tmp/" :download-dir "wrong"))
+(defvar *store* (make-instance 'files-store :upload-path #P"/tmp/" :download-dir "wrong"))
 
 (defmethod restas:initialize-module-instance :after ((module (eql #.*package*)) context)
   (restas:with-context context
-    (setf (upload-dir *store*) *upload-directory*)
+    (setf (upload-path *store*) *upload-path*)
     ;the VV parameter VV will be transmitted to the 'files submodule
-    (setf restas.directory-publisher:*directory* (upload-dir *store*))
+    (setf restas.directory-publisher:*directory* (upload-path *store*))
     (setf (download-dir *store*) (restas:genurl 'files.route :path ""))
     (restas:in-submodule 'upl
       (upload:update-store *store*))))
