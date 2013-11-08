@@ -22,6 +22,8 @@
   (define-method preview (content chkbox)
     "draw a small preview composition.
      The chkbox is the name of checkbox group, if nil - no checkbox")
+  (define-method draw-time (time)
+    "draw a given timestamp, or period into an item preview")
   (define-method update-item-form (content)
     "draw a form for single item update"))
 
