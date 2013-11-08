@@ -11,7 +11,7 @@
 (defvar *edit-items* t)
 
 (defun gen-static-url (path)
-  (restas:genurl 'static.route :path path))
+  (concatenate 'string (restas:genurl 'static.route :path "") path))
 
 (defmethod theme.add-pic ((drawer handler) form father father-name)
   (with-html-output-to-string (sss nil :prologue t :indent t)
