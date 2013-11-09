@@ -1,5 +1,6 @@
 var allNames;
 var allComments;
+var allTimes;
 
 function lispify(arr)
 {
@@ -15,6 +16,11 @@ function initArray(len, val) {
     var rez = new Array(len), i = 0;
     while (i < len) { rez[i++] = val;}
     return rez;
+}
+
+function hasTimeField()
+{
+    return null != document.getElementById("time");
 }
 
 function changeName(id, val)
@@ -33,12 +39,21 @@ function changeComment(id, val)
 
 function changeTime(id, val)
 {
-    var t = document.getElementById("time");
-    if (null != t) //receive album page doesn't contain the time field
+    if(hasTimeField()) //receive album page doesn't contain the time field
     {
+        var t = document.getElementById("time");
         allTimes[id] = val;
         t.value = lispify(allTimes.map(function (time) { return time.toJSON();}));
     }
+}
+
+function safeChangeTime(id, input)
+{
+    var newVal = Date.parse( input.value);
+    if(isNaN(newVal))
+        input.value = allTimes[id];
+    else
+        changeTime( id, new Date(newVal));
 }
 
 function makePicDialog(preview, id)
@@ -72,6 +87,22 @@ function makePicDialog(preview, id)
     descrBox.appendChild(descr);
     div.appendChild(nameBox);
     div.appendChild(descrBox);
+    if(hasTimeField())
+    {
+        var timeBox = document.createElement("div");
+        timeBox.className = "time-box";
+        var timeL = document.createElement("div");
+        timeL.className = "time-label";
+        timeL.innerText = "Дата";
+        var time = document.createElement("input");
+        time.type = "text";
+        time.className = "time-input";
+        time.onkeyup = function(e) {safeChangeTime(id, e.target);};
+        time.value = allTimes[id];
+        timeBox.appendChild(timeL);
+        timeBox.appendChild(time);
+        div.appendChild(timeBox);
+    }
     div.appendChild(img);
     div.style.maxHeight = "100%";
     div.style.maxWidth = "100%";
@@ -87,8 +118,8 @@ function done(files)
     var filePaths = files.map(function (el) { return el.file; });
     allTimes = initArray(preview.length, new Date());
     files.forEach(function (element, index, array){
-        prew.appendChild(makePicDialog( element.url, index));
         allTimes[index] = new Date(element.date);
+        prew.appendChild(makePicDialog( element.url, index));
     });
     allNames = initArray(files.length, "");
     allComments = initArray(files.length, "");

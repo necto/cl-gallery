@@ -166,13 +166,13 @@
   (let ((father (p-coll.get-item db father-id))
         (period (make-embracing-period pics)))
     (when father
+      (adjust-album-period #'(lambda (it) (p-coll.update-item db it))
+                           father period)
       (setf (album-items father) (append pics (album-items father)))
       (with-pics-collection (items db)
         (iter (for pic in pics)
               (mongo:insert-op items (item-to-ht pic)))
         (mongo:update-op items (son "_id" (item-id father)) (item-to-ht father)))
-      (adjust-album-period #'(lambda (it) (p-coll.update-item db it))
-                           father period)
       t)))
 
 (defmethod p-coll.save-album ((db handler) album father-id)
@@ -180,10 +180,10 @@
     (when father
       (push album (album-items father))
       (with-pics-collection (pics db)
-        (mongo:insert-op pics  (item-to-ht album))
-        (mongo:update-op pics (son "_id" (item-id father)) (item-to-ht father)))
       (adjust-album-period #'(lambda (it) (p-coll.update-item db it))
                            father (item-time album))
+        (mongo:insert-op pics  (item-to-ht album))
+        (mongo:update-op pics (son "_id" (item-id father)) (item-to-ht father)))
       t)))
 
 ;; Todo: check for deleted pictures from the album, and delete them?

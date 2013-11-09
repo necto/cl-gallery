@@ -229,7 +229,11 @@
         (make-embracing-period (list (slot-value album 'time) period))))
 
 (defun adjust-album-period (item-updater album period)
-  (unless (period-contains-p (item-time album) period)
-    (adjust-direct-album-period album period)
-    (funcall item-updater album)))
+  (if (null (album-items album))
+      (progn
+        (setf (slot-value album 'time) period)
+        (funcall item-updater album))
+      (unless (period-contains-p (item-time album) period)
+        (adjust-direct-album-period album period)
+        (funcall item-updater album))))
 

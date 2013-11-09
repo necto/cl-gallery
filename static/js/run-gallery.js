@@ -1,23 +1,25 @@
 $(document).ready(function() {
+    if (window.jQuery && $(".fancybox-thumb").hasOwnProperty('fancybox'))
 	$(".fancybox-thumb").fancybox({
-		helpers	: {
+	    helpers	: {
 			title	: {
-				type: 'outside'
+			    type: 'outside'
 			},
-			thumbs	: {
-				width	: 50,
-				height	: 50
-			}
+		thumbs	: {
+		    width	: 50,
+		    height	: 50
 		}
+	    }
 	});
 });
 
 function reMasonry()
 {
-    $('#masContainer').masonry({
-        columnWidth:110,
-        itemSelector:'.img'
-    });
+    if (window.jQuery && $('#masContainer').hasOwnProperty('masonry'))
+        $('#masContainer').masonry({
+            columnWidth:110,
+            itemSelector:'.img'
+        });
 }
 
 window.onload = function() {

@@ -24,18 +24,18 @@
   (let ((father (p-coll.get-item mem father-id))
         (period (make-embracing-period pics)))
     (when father
-      (setf (album-items father) (append pics (album-items father)))
       (adjust-album-period #'(lambda (it) (p-coll.update-item mem it))
                            father period)
+      (setf (album-items father) (append pics (album-items father)))
       (setf (items mem) (nconc pics (items mem))))))
 
 
 (defmethod p-coll.save-album ((mem handler) album father-id)
   (let ((father (p-coll.get-item mem father-id)))
     (when father
-      (push album (album-items father))
       (adjust-album-period #'(lambda (it) (p-coll.update-item mem it))
                            father (item-time album))
+      (push album (album-items father))
       (push album (items mem)))))
 
 
