@@ -11,16 +11,21 @@ It is the example of utilization hunchentoot file-uploading mechanism.
  *  multiple files upload -- uploading several files at a time.
  *  MIME type filter -- filters the uploaded files by it's type on both client and server sides
 * Gallery:
- *  albums
- *  logic and view separation for better integration
+ *  Nested albums, forming any tree, you want
+ *  Logic and view separation for better integration
+ *  Pictures in album are arranged on the page by [masonry](http://masonry.desandro.com/) JS pluguin.
  *  Picture view is boosted by the [lightbox](http://lokeshdhakar.com/projects/lightbox2/) JS pluguin.
 
 ## Platform
 
-Currently cl-gallery requires [sbcl](http://www.sbcl.org/) and [imagemagick](http://www.imagemagick.org/script/index.php)
-utility /usr/bin/convert for scaling images into thumbnails. Also the lightbox isn't included into the repository, you
-need to install it into the `static/js` and `static/css` folders to enjoy the beautiful slideshow. The html is rendered
-by cl-who library, easily uptained by quicklisp.
+Currently cl-gallery requires [sbcl](http://www.sbcl.org/), [imagemagick](http://www.imagemagick.org/script/index.php)
+utility /usr/bin/convert for scaling images into thumbnails and and [exiftool](http://owl.phy.queensu.ca/~phil/exiftool/)
+/usr/bin/exiftool for extracting a creation time from uploaded pictures.
+Also the lightbox and masontry aren't included into the repository, you
+need to install them into the `static/js` and `static/css` folders to enjoy the beautiful slideshow.
+The html in the minimal version is rendered by cl-who library, easily uptained by quicklisp. You can easily use any
+other html-generation library, and customize only those parts of appearance, which you need by defining corresponding
+methods.
 
 ## Usage
 
