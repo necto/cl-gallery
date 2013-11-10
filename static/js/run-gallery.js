@@ -1,5 +1,5 @@
 $(document).ready(function() {
-    if (window.jQuery && $(".fancybox-thumb").hasOwnProperty('fancybox'))
+    if (window.jQuery && jQuery().fancybox)
 	$(".fancybox-thumb").fancybox({
 	    helpers	: {
 			title	: {
@@ -15,7 +15,7 @@ $(document).ready(function() {
 
 function reMasonry()
 {
-    if (window.jQuery && $('#masContainer').hasOwnProperty('masonry'))
+    if (window.jQuery && jQuery().masonry)
         $('#masContainer').masonry({
             columnWidth:110,
             itemSelector:'.img'
